@@ -1,0 +1,15 @@
+cycler==0.10.0
+entrypoints==0.3
+flake8==3.7.9
+gdspy==1.5
+kiwisolver==1.1.0
+matplotlib==3.1.2
+mccabe==0.6.1
+numpy==1.18.1
+phidl==1.2.0
+pycodestyle==2.5.0
+pyflakes==2.1.1
+pyparsing==2.4.6
+python-dateutil==2.8.1
+six==1.14.0
+webcolors==1.10
