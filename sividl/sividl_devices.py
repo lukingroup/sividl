@@ -10,28 +10,40 @@ import gdspy
 
 from sividl_utils import render_text
 
+# ==============================================================================
+# sividl.devices
+# ==============================================================================
+# This module contains phidl wrapper classes used for quick generation of
+# nanophotonic structures for e-beam lithography.
+#
+# Implemented devices are so far:
+#   - Write field with alignment marker
+#   - Etch slabs
+#   - Generator of rectangular labelled parameter sweeps
+#
+# Note that all dimensions are in micrometer.
+# ==============================================================================
+
 
 class SividdleDevice(Device):
-    ''' Global device class holding all common class functions
+    ''' Global device class holding all common class functions.
 
     Parameters
     ----------
-    wf_size: int
-     Write filed size in um
-    layer: int:
-        Layer
+    name: string
+        Name of top-level cell.
     '''
 
     def __init__(self, name):
         Device.__init__(self, name=name)
 
     def invert(self, layer):
-        ''' Inverts a pattern from positive to negative or vice verss
+        ''' Inverts a pattern from positive to negative or vice versa.
 
         Parameters
         ----------
         layer: string
-            layer
+            Layer of new, inverted device.
         '''
 
         bounding_box = Device('interim_bounding_box')
@@ -40,7 +52,7 @@ class SividdleDevice(Device):
                                   (self.xmax, self.ymax),
                                   (self.xmax, self.ymin)], layer=layer)
 
-        # perform substraction for positive ebeam resist
+        # perform substraction for positive e-beam resist
         inverse = pg.boolean(
             A=bounding_box,
             B=self,
@@ -52,16 +64,17 @@ class SividdleDevice(Device):
 
     def add_label(self, layer_label, text,  font_properties,
                   fontsize, orientation, distance):
-        ''' Adds a label to device
+        ''' Adds a label to device.
 
         Parameters
         ----------
         orientation: string
-            r, l, t, b (where to put the label
-            with reference to device)
+            Indicators 'r', 'l', 't', 'b' to indicate
+            label position with reference to device
+            (right, left, top, bottom).
 
         distance: float
-            Distance to device
+            Distance between label and device.
         '''
 
         assert orientation in ['r', 'l', 't', 'b'], \
@@ -75,10 +88,10 @@ class SividdleDevice(Device):
         text_device.add(text)
 
         # Shift center of bounding box to origin,
-        # text center should now overlapp with center of device
+        # text center should now overlapp with center of device.
         text_device.center = [0, 0]
 
-        # Move text
+        # Move text.
         if orientation == 'l':
             text_device.movex(-(text_device.xsize+self.xsize)/2 - distance)
         elif orientation == 'r':
@@ -92,18 +105,18 @@ class SividdleDevice(Device):
 
 
 class BoundingBox(SividdleDevice):
-    ''' Contains a writefield and all plot functions
+    ''' Contains a writefield and all plot functions.
 
     Parameters
     ----------
     wf_size: int
-        Write filed size in um
+        Write filed size in um.
     layer: int
-        Layer
+        Layer of bounding box.
     '''
 
     def __init__(self, layer, wf_size):
-        # Properly instanciate Device
+        # Properly instantiate Device
         SividdleDevice.__init__(self, name='writefield_boundingbox')
         self.add_polygon([(-wf_size*0.5, -wf_size*0.5),
                           (-wf_size*0.5, wf_size*0.5),
@@ -111,20 +124,20 @@ class BoundingBox(SividdleDevice):
                           (wf_size*0.5, -wf_size*0.5)], layer=layer)
 
 
-class CrossAlignmentMark(SividdleDevice):
-    ''' Write alignment marker
+class CrossAligmentMark(SividdleDevice):
+    ''' Write alignment marker.
 
     Parameters
     ----------
     positive (Boolean): Positive tone resist if true
     layer: int
-        layer
+        Layer of aligment mark.
     d_small: int
-        width of small rectangle
+        Width of small rectangle.
     d_large:  int
-        width of large rectangle
+        Width of large rectangle.
     sep: int
-        gap between rectangles
+        Gap between rectangles.
     '''
     def __init__(self, layer, d_small=1.75, d_large=1.975, sep=0.275):
         SividdleDevice.__init__(self, name='aligment_mark')
@@ -137,27 +150,27 @@ class CrossAlignmentMark(SividdleDevice):
             .move([d_small+sep, d_small+sep])
 
 
-class WriteFieldCrossAlignmentMark(SividdleDevice):
-    ''' Writefiled with four cross-type alignment markers
+class WriteFieldCrossAligmentMark(SividdleDevice):
+    ''' Writefiled with four cross-type alignment markers.
 
     Parameters
     ----------
     params: dict
         Contains the writefield parameters:
     params['bounding_box_size']: float
-        dimension of write field
+        Dimension of write field.
     params['positive']: boolean
-        If True, pattern for positive tone resist is created
+        If True, pattern for positive tone resist is created.
     params['bounding_box_layer']: int
-        layer of bounding box
+        Layer of bounding box.
     params['alignment_layer']: int:
-        layer of alingment markers
+        Layer of alignment markers.
     params['alignment_offset_dx']: int
-        Offset of alignement markers
-        from edge of writefield in x-direction
+        Offset of alignment markers
+        from edge of writefield in x-direction.
     params['alignment_offset_dy']: int
-        Offset of alignement markers
-        from edge of writefield in x-direction
+        Offset of alignment markers
+        from edge of writefield in x-direction.
     '''
 
     def __init__(self, params):
@@ -172,7 +185,7 @@ class WriteFieldCrossAlignmentMark(SividdleDevice):
         self << bounding_box
 
         # make alignment marks
-        alignment_mark = CrossAlignmentMark(params['alignment_layer'])
+        alignment_mark = CrossAligmentMark(params['alignment_layer'])
 
         if params['positive']:
             alignment_mark = alignment_mark.invert(params['alignment_layer'])
@@ -202,7 +215,7 @@ class WriteFieldCrossAlignmentMark(SividdleDevice):
 
 
 class EtchSlap(SividdleDevice):
-    ''' Generate two etching strip for isotropic etching tests
+    ''' Generate two etching strip for isotropic etching tests.
 
 
     Parameters
@@ -211,20 +224,20 @@ class EtchSlap(SividdleDevice):
         Dictionary containing the following parameters:
 
     params['expose_layer']: int
-        Layer for exposed regions
+        Layer for exposed regions.
     params['id_string']: string
         Identifier of device, will be printed
-        in label layer
+        in label layer.
     params['label_layer']: int
         Layer for labelling which details
-        slit/slap dimensions
+        slit/slap dimensions.
     params['length_slab']: float
-        Length of the slits and the resulting slab
+        Length of the slits and the resulting slab.
     params['width_slit']: float
-        Width of the two slits
+        Width of the two slits.
     params['width_slab']: float:
         Separation of two slits which will result
-        in width of slab
+        in width of slab.
     '''
 
     def __init__(self, params):
@@ -259,7 +272,7 @@ class EtchSlap(SividdleDevice):
             layer=self.label_layer
         )
 
-        # Shift center of bounding box to origin
+        # Shift center of bounding box to origin.
         self.center = [0, 0]
 
 
@@ -270,46 +283,46 @@ class EquidistantRectangularSweep(SividdleDevice):
     ----------
     sweep_params: dict
         Dictionary containing the settings of sweep,
-        with the following keys
+        with the following keys.
     sweep_params['params']: dict
-        setting dictionary for device class to be used
+        Setting dictionary for device class to be used.
     sweep_params['device_name']: string
-        Name used for gds cell
+        Name used for gds cell.
     sweep_params['device_class']: SividdleDevice
         Sividdle device to be replicated
-        and for which the params dictionary is furnished
+        and for which the params dictionary is furnished.
     sweep_params['varsx']: array
         Array of values to be changed in x-direction,
-        will replace params at key 'keyx'
+        will replace params at key 'keyx'.
     sweep_params['keyx']: string
         Dictionary key of entry in params for which
-        varsx furnishes the new variables
+        varsx furnishes the new variables.
     sweep_params['varxz'] /  sweep_params['keyy']: array / string
-        Same for y-direction
+        Same for y-direction.
     sweep_params['pitchx'] / sweep_params['pitchy']: float
         Separation of bounding boxes of different
-        devices in x-direction / y-direction
+        devices in x-direction / y-direction.
     sweep_params['grid_label']: boolean
         If True, label grid by assigning each
-        device a coordiate 'A0', 'A1', etc.
+        device a coordinate 'A0', 'A1', etc.
     sweep_params['grid_label_params']: dict
-        Parameters of grid label
+        Parameters of grid label.
     sweep_params['grid_label_params']['label_layer']: int
-        Layer of grid label to be exposed
+        Layer of grid label to be exposed.
     sweep_params['grid_label_params']['textsize']: int
-        Textsize of label
+        Textsize of label.
     sweep_params['grid_label_params']['font']: string
         Font style,
         from here:
         https://matplotlib.org/3.1.1/gallery/text_labels_and_annotations/fonts_demo.html
     sweep_params['grid_label_params']['label_dist']: float
-        Distance between label and device
+        Distance between label and device.
     sweep_params['grid_label_params']['revert_numbers']: boolean
         Revert ordering of numbers
         (sometimes usefull if same sweep
-        is replicated in mirrored way)
+        is replicated in mirrored way).
     sweep_params['grid_label_params']['revert_letters']: boolean
-        Revert odering of letters
+        Revert odering of letters.
     '''
 
     def __init__(self, sweep_params):
@@ -326,7 +339,7 @@ class EquidistantRectangularSweep(SividdleDevice):
         padding_x = np.zeros([num_iter_x, num_iter_y])
         padding_y = np.zeros_like(padding_x)
 
-        # Sores dimensions of devices
+        # Stores dimensions of devices
         device_dimensions = np.zeros([num_iter_x, num_iter_y, 2])
 
         # Generate labels
@@ -364,7 +377,7 @@ class EquidistantRectangularSweep(SividdleDevice):
             new_device = sp['device_class'](sp['device_params'])
 
             if j < num_iter_x-1:
-                # One to the right, takes into account xsize
+                # One to the right, takes into account xsize.
                 current_xsize = device_dimensions[i, j, 0]
                 right_xsize = device_dimensions[i, j+1, 0]
                 padding_x[i, j+1] = padding_x[i, j] + \
@@ -376,7 +389,7 @@ class EquidistantRectangularSweep(SividdleDevice):
                 padding_y[i+1, j] = padding_y[i, j] + \
                     (current_ysize+top_ysize)*0.5 + sp['pitchy']
 
-            # Add grid labels
+            # Add grid labels.
             if sp['grid_label']:
 
                 fp = FontProperties(style=sp['grid_label_params']['font'])
@@ -414,5 +427,5 @@ class EquidistantRectangularSweep(SividdleDevice):
 
             self << new_device.move([padding_x[i, j], padding_y[i, j]])
 
-        # Shift center of bounding box to origin
+        # Shift center of bounding box to origin.
         self.center = [0, 0]

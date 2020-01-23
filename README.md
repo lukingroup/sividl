@@ -1,6 +1,6 @@
 # SIVIDL Nanophotonics GDS Layout Editor
 
-The SIVIDL module is an extension to the fabolous [PHIDL](https://github.com/amccaugh/phidl) package.
+The SIVIDL module is an extension to the fabulous [PHIDL](https://github.com/amccaugh/phidl) package.
 
 # Setup and Requirements
 

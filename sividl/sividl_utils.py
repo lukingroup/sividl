@@ -1,6 +1,11 @@
 import gdspy
 from matplotlib.textpath import TextPath
 
+# ==============================================================================
+# sividl.utils -
+# ==============================================================================
+# This module helper function for sividl.devices
+# ==============================================================================
 
 # From https://gdspy.readthedocs.io/en/stable/gettingstarted.html
 def render_text(text, size=None, position=(0, 0),
