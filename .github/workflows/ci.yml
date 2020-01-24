@@ -19,8 +19,8 @@ jobs:
         python -m pip install --upgrade pip
         # Unnecessary for now, as lint runs in tox
         # pip install -r requirements.txt
-     - name: Pytest example code
-        run: |
+    - name: Pytest example code
+      run: |
         pip install -r ci-requirements.txt
         tox -e pytest
     - name: Lint with flake8
