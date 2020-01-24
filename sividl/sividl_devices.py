@@ -63,43 +63,56 @@ class SividdleDevice(Device):
 
         return inverse
 
-    def add_label(self, layer_label, text, font_properties,
-                  fontsize, orientation, distance):
+    def add_label(self, params):
         """Adding a label to device.
 
         Parameters
         ----------
-        orientation: string
+        params: dict
+            Dictionary containing the settings.
+        params['orientation']: string
             Indicators 'r', 'l', 't', 'b' to indicate
             label position with reference to device
             (right, left, top, bottom).
-
-        distance: float
+        params['layer']: int
+            Layer of text.
+        params['text']: string
+            Text to render.
+        params['style']: string
+            Font style,
+            from here:
+            https://matplotlib.org/3.1.1/gallery/text_labels_and_annotations/fonts_demo.html
+        params['distance']: float
             Distance between label and device.
         """
-        assert orientation in ['r', 'l', 't', 'b'], \
+        assert params['orientation'] in ['r', 'l', 't', 'b'], \
             "Orientation must be one of the following: ['r', 'l', 't', 'b']"
 
-        text_device = Device('label_{}'.format(text))
-        text = gdspy.PolygonSet(
-            render_text(text, fontsize, font_prop=font_properties),
-            layer=layer_label
-        )
-        text_device.add(text)
+        # Add text
+        params['name'] = 'label_{}'.format(params['text'])
+        text_device = RenderedText(params)
 
         # Shift center of bounding box to origin,
         # text center should now overlapp with center of device.
         text_device.center = [0, 0]
 
         # Move text.
-        if orientation == 'l':
-            text_device.movex(-(text_device.xsize + self.xsize) / 2 - distance)
-        elif orientation == 'r':
-            text_device.movex((text_device.xsize + self.xsize) / 2 + distance)
-        elif orientation == 't':
-            text_device.movey((text_device.ysize + self.ysize) / 2 + distance)
-        elif orientation == 'b':
-            text_device.movey(-(text_device.ysize + self.ysize) / 2 - distance)
+        if params['orientation'] == 'l':
+            text_device.movex(
+                -(text_device.xsize + self.xsize) / 2 - params['distance']
+            )
+        elif params['orientation'] == 'r':
+            text_device.movex(
+                (text_device.xsize + self.xsize) / 2 + params['distance']
+            )
+        elif params['orientation'] == 't':
+            text_device.movey(
+                (text_device.ysize + self.ysize) / 2 + params['distance']
+            )
+        elif params['orientation'] == 'b':
+            text_device.movey(
+                -(text_device.ysize + self.ysize) / 2 - params['distance']
+            )
 
         self << text_device
 
@@ -401,38 +414,22 @@ class EquidistantRectangularSweep(SividdleDevice):
             # Add grid labels.
             if sp['grid_label']:
 
-                fp = FontProperties(style=sp['grid_label_params']['font'])
-
                 if i == 0 or i == num_iter_y - 1:
-                    text = number_label[j]
+                    sp['grid_label_params']['text'] = number_label[j]
                     if i == 0:
-                        orientation = 'b'
+                        sp['grid_label_params']['orientation'] = 'b'
                     else:
-                        orientation = 't'
+                        sp['grid_label_params']['orientation'] = 't'
 
-                    new_device.add_label(
-                        sp['grid_label_params']['label_layer'],
-                        text,
-                        fp,
-                        sp['grid_label_params']['textsize'],
-                        orientation,
-                        sp['grid_label_params']['label_dist']
-                    )
+                    new_device.add_label(sp['grid_label_params'])
                 if j == 0 or j == num_iter_x - 1:
-                    text = letter_label[i]
+                    sp['grid_label_params']['text'] = letter_label[i]
                     if j == 0:
-                        orientation = 'l'
+                        sp['grid_label_params']['orientation'] = 'l'
                     else:
-                        orientation = 'r'
+                        sp['grid_label_params']['orientation'] = 'r'
 
-                    new_device.add_label(
-                        sp['grid_label_params']['label_layer'],
-                        text,
-                        fp,
-                        sp['grid_label_params']['textsize'],
-                        orientation,
-                        sp['grid_label_params']['label_dist']
-                    )
+                    new_device.add_label(sp['grid_label_params'])
 
             self << new_device.move([padding_x[i, j], padding_y[i, j]])
 
@@ -486,6 +483,48 @@ class ImageArray(SividdleDevice):
                             y * params['pixel_size']
                         )
                     )
+
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
+
+
+class RenderedText(SividdleDevice):
+    """Device containing rendered text.
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing all settings
+    params['name']: string
+        Name of gds cell.
+    params['text']: string
+        Text to render.
+    params['style']: string
+        Font style,
+        from here:
+        https://matplotlib.org/3.1.1/gallery/text_labels_and_annotations/fonts_demo.html
+    params['fontsize']: float
+        Font size to render.
+    params['layer']:
+        Layer of rendered text.
+    """
+
+    def __init__(self, params):
+
+        SividdleDevice.__init__(self, name=params['name'])
+
+        font_prop = FontProperties(style=params['style'])
+
+        text = gdspy.PolygonSet(
+            render_text(
+                params['text'],
+                params['fontsize'],
+                font_prop=font_prop
+            ),
+            layer=params['layer']
+        )
+
+        self.add(text)
 
         # Shift center of bounding box to origin.
         self.center = [0, 0]

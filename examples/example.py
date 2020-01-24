@@ -63,10 +63,10 @@ def run_example():
 
     # We will add a label to the devices, with the following parameters:
     grid_label_params = {
-        'label_layer'   : 1,
-        'textsize'      : 5,
-        'font'          : 'normal',
-        'label_dist'    : 15,
+        'fontsize'      : 5,
+        'style'          : 'normal',
+        'layer'         : 1,
+        'distance'      : 15,
         'revert_numbers': False,
         'revert_letters': False
     }
@@ -107,6 +107,18 @@ def run_example():
     # Add two sweeps to write field and move accordingly.
     write_field << sweep_box_horizontal.move([-100, +105])
     write_field << sweep_box_vertical.rotate(45).move([+65, -80])
+
+    # Add Arrow pointing to top right alignment marker
+    arrow_params = {
+        'name'          : 'arrow',
+        'text'          : '→',
+        'fontsize'      : 45,
+        'style'         : 'normal',
+        'layer'         : 4,
+    }
+
+    arrow = sivp.RenderedText(arrow_params)
+    write_field << arrow.move([200, 227])
 
     # For fun, add a picture of the Harvard Logo to the empty space
     picture_parameters = {
