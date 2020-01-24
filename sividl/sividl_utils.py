@@ -1,5 +1,8 @@
 import gdspy
 from matplotlib.textpath import TextPath
+import numpy as np
+from PIL import Image
+
 
 # ==============================================================================
 # sividl.utils -
@@ -46,3 +49,31 @@ def render_text(text, size=None, position=(0, 0),
                 xmax = max(xmax, poly[:, 0].max())
                 polys.append(poly)
     return polys
+
+
+def image_to_binary_bitmap(filename, threshhold):
+    """Convert image into binary array.
+
+    From:
+    https://stackoverflow.com/questions/50494541/bw-image-to-binary-array
+
+    Parameters
+    ----------
+    filename: string
+        Filename of the image.
+    threshhold: int
+        Value from 0-255 separating the white
+        from the dark pixels.
+
+    Return
+    ----------
+    bitmap: numpy.array
+        Binary bitmap of the array.
+    """
+    img = Image.open(filename).convert('L')
+    np_img = np.array(img)
+    np_img = ~np_img  # invert B&W
+    np_img[np_img <= threshhold] = 0
+    np_img[np_img > threshhold] = 1
+
+    return np_img

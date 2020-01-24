@@ -135,3 +135,6 @@ dmypy.json
 /output
 
 /.vscode
+
+#pytest
+.pytest_cache

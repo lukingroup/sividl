@@ -9,6 +9,7 @@
 #   - Write field with alignment marker
 #   - Etch slabs
 #   - Generator of rectangular labelled parameter sweeps
+#   - Representation of images as pixel array
 #
 # Note that all dimensions are in micrometer.
 # ==============================================================================
@@ -23,7 +24,7 @@ from matplotlib.font_manager import FontProperties
 import numpy as np
 from phidl import Device
 import phidl.geometry as pg
-from sividl_utils import render_text
+from sividl_utils import image_to_binary_bitmap, render_text
 
 
 class SividdleDevice(Device):
@@ -434,6 +435,57 @@ class EquidistantRectangularSweep(SividdleDevice):
                     )
 
             self << new_device.move([padding_x[i, j], padding_y[i, j]])
+
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
+
+
+class ImageArray(SividdleDevice):
+    """Transforms a color image to BW array and generates an according pattern.
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing setting
+    params['name']: string
+        Name of GDS cell.
+    params['image']: string
+        Path to image
+    params['threshold']: int
+        Threshold from 0 - 255 separating black from white
+    params['pixel_size']: int
+        Physical size of one pixel on the design in um.
+    params['layer']: int
+        Layer where picture will be displayed.
+    """
+
+    def __init__(self, params):
+
+        SividdleDevice.__init__(self, name=params['name'])
+
+        # Generate binary bitmap out of image
+        bitmap = image_to_binary_bitmap(params['image'], params['threshold'])
+        x_image = bitmap.shape[0]
+        y_image = bitmap.shape[1]
+
+        # Define pixel polygon
+        pixel = pg.rectangle(
+            size=(
+                params['pixel_size'],
+                params['pixel_size']
+            ),
+            layer=params['layer']
+        )
+
+        for x in range(x_image):
+            for y in range(y_image):
+                if bitmap[x, y] == 1:
+                    self << pg.copy(pixel).move(
+                        (
+                            x * params['pixel_size'],
+                            y * params['pixel_size']
+                        )
+                    )
 
         # Shift center of bounding box to origin.
         self.center = [0, 0]
