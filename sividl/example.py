@@ -13,12 +13,12 @@ import sividl_devices as sivp
 
 # Setup writefield.
 writefield_parameters = {
-    'bounding_box_size':   500,
-    'bounding_box_layer':  255,
-    'positive':            True,
-    'alignment_layer':     1,
-    'alignment_offset_dx': 25,
-    'alignment_offset_dy': 25,
+    'bounding_box_size'     : 500,
+    'bounding_box_layer'    : 255,
+    'positive'              : True,
+    'alignment_layer'       : 1,
+    'alignment_offset_dx'   : 25,
+    'alignment_offset_dy'   : 25,
 }
 
 # Generate Writefield.
@@ -26,11 +26,11 @@ write_field = sivp.WriteFieldCrossAligmentMark(writefield_parameters)
 
 # Initial slab parameters.
 slab_parameters = {
-    'expose_layer': 1,
-    'length_slab':  20,
-    'width_slit':   1,
-    'width_slab':   2,
-    'label_layer':  254,
+    'expose_layer'  : 1,
+    'length_slab'   : 20,
+    'width_slit'    : 1,
+    'width_slab'    : 2,
+    'label_layer'   : 254,
 }
 
 # Setup sweep parameters.
@@ -48,27 +48,27 @@ slit_widths = np.linspace(width_slit_min, width_slit_max, num_iter_slit_widths)
 
 # We will add a label to the devices, with the following parameters:
 grid_label_params = {
-    'label_layer':      1,
-    'textsize':         5,
-    'font':             'normal',
-    'label_dist':       15,
-    'revert_numbers':   False,
-    'revert_letters':   False
+    'label_layer'   : 1,
+    'textsize'      : 5,
+    'font'          : 'normal',
+    'label_dist'    : 15,
+    'revert_numbers': False,
+    'revert_letters': False
 }
 
 # Sweep parameters fully specify the labelled 2D sweep.
 sweep_params = {
-    'device_params':         slab_parameters,
-    'sweep_name':           'horizontal_sweep',
-    'device_class':         sivp.EtchSlap,
-    'varsx':                slab_widths,
-    'varsy':                slit_widths,
-    'keyx':                 'width_slab',
-    'keyy':                 'width_slit',
-    'pitchx':               13,
-    'pitchy':               13,
-    'grid_label':           True,
-    'grid_label_params':    grid_label_params
+    'device_params'     : slab_parameters,
+    'sweep_name'        : 'horizontal_sweep',
+    'device_class'      : sivp.EtchSlap,
+    'varsx'             : slab_widths,
+    'varsy'             : slit_widths,
+    'keyx'              : 'width_slab',
+    'keyy'              : 'width_slit',
+    'pitchx'            : 13,
+    'pitchy'            : 13,
+    'grid_label'        : True,
+    'grid_label_params' : grid_label_params
 }
 
 # Generate sweep in horizontal direction.

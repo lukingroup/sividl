@@ -1,16 +1,5 @@
-from __future__ import division, print_function, absolute_import
-import numpy as np
-from matplotlib.font_manager import FontProperties
-import itertools as it
-import string
 
-from phidl import Device
-import phidl.geometry as pg
-import gdspy
-
-from sividl_utils import render_text
-
-# ==============================================================================
+# =============================================================================='
 # sividl.devices
 # ==============================================================================
 # This module contains phidl wrapper classes used for quick generation of
@@ -24,28 +13,39 @@ from sividl_utils import render_text
 # Note that all dimensions are in micrometer.
 # ==============================================================================
 
+from __future__ import absolute_import, division, print_function
+
+import itertools as it
+import string
+
+import gdspy
+from matplotlib.font_manager import FontProperties
+import numpy as np
+from phidl import Device
+import phidl.geometry as pg
+from sividl_utils import render_text
+
 
 class SividdleDevice(Device):
-    ''' Global device class holding all common class functions.
+    """Global device class holding all common class functions.
 
     Parameters
     ----------
     name: string
         Name of top-level cell.
-    '''
+    """
 
     def __init__(self, name):
         Device.__init__(self, name=name)
 
     def invert(self, layer):
-        ''' Inverts a pattern from positive to negative or vice versa.
+        """Inverts a pattern from positive to negative or vice versa.
 
         Parameters
         ----------
         layer: string
             Layer of new, inverted device.
-        '''
-
+        """
         bounding_box = Device('interim_bounding_box')
         bounding_box.add_polygon([(self.xmin, self.ymin),
                                   (self.xmin, self.ymax),
@@ -62,9 +62,9 @@ class SividdleDevice(Device):
 
         return inverse
 
-    def add_label(self, layer_label, text,  font_properties,
+    def add_label(self, layer_label, text, font_properties,
                   fontsize, orientation, distance):
-        ''' Adds a label to device.
+        """Adding a label to device.
 
         Parameters
         ----------
@@ -75,8 +75,7 @@ class SividdleDevice(Device):
 
         distance: float
             Distance between label and device.
-        '''
-
+        """
         assert orientation in ['r', 'l', 't', 'b'], \
             "Orientation must be one of the following: ['r', 'l', 't', 'b']"
 
@@ -93,19 +92,19 @@ class SividdleDevice(Device):
 
         # Move text.
         if orientation == 'l':
-            text_device.movex(-(text_device.xsize+self.xsize)/2 - distance)
+            text_device.movex(-(text_device.xsize + self.xsize) / 2 - distance)
         elif orientation == 'r':
-            text_device.movex((text_device.xsize+self.xsize)/2 + distance)
+            text_device.movex((text_device.xsize + self.xsize) / 2 + distance)
         elif orientation == 't':
-            text_device.movey((text_device.ysize+self.ysize)/2 + distance)
+            text_device.movey((text_device.ysize + self.ysize) / 2 + distance)
         elif orientation == 'b':
-            text_device.movey(-(text_device.ysize+self.ysize)/2 - distance)
+            text_device.movey(-(text_device.ysize + self.ysize) / 2 - distance)
 
         self << text_device
 
 
 class BoundingBox(SividdleDevice):
-    ''' Contains a writefield and all plot functions.
+    """Contains a writefield and all plot functions.
 
     Parameters
     ----------
@@ -113,19 +112,19 @@ class BoundingBox(SividdleDevice):
         Write filed size in um.
     layer: int
         Layer of bounding box.
-    '''
+    """
 
     def __init__(self, layer, wf_size):
         # Properly instantiate Device
         SividdleDevice.__init__(self, name='writefield_boundingbox')
-        self.add_polygon([(-wf_size*0.5, -wf_size*0.5),
-                          (-wf_size*0.5, wf_size*0.5),
-                          (wf_size*0.5, wf_size*0.5),
-                          (wf_size*0.5, -wf_size*0.5)], layer=layer)
+        self.add_polygon([(-wf_size * 0.5, -wf_size * 0.5),
+                          (-wf_size * 0.5, wf_size * 0.5),
+                          (wf_size * 0.5, wf_size * 0.5),
+                          (wf_size * 0.5, -wf_size * 0.5)], layer=layer)
 
 
 class CrossAligmentMark(SividdleDevice):
-    ''' Write alignment marker.
+    """Write alignment marker.
 
     Parameters
     ----------
@@ -138,20 +137,21 @@ class CrossAligmentMark(SividdleDevice):
         Width of large rectangle.
     sep: int
         Gap between rectangles.
-    '''
+    """
+
     def __init__(self, layer, d_small=1.75, d_large=1.975, sep=0.275):
         SividdleDevice.__init__(self, name='aligment_mark')
         self << pg.rectangle(size=(d_large, d_large), layer=layer)
         self << pg.rectangle(size=(d_small, d_small), layer=layer)\
-            .movex(d_large+sep)
+            .movex(d_large + sep)
         self << pg.rectangle(size=(d_small, d_small), layer=layer)\
-            .movey(d_large+sep)
+            .movey(d_large + sep)
         self << pg.rectangle(size=(d_large, d_large), layer=layer)\
-            .move([d_small+sep, d_small+sep])
+            .move([d_small + sep, d_small + sep])
 
 
 class WriteFieldCrossAligmentMark(SividdleDevice):
-    ''' Writefiled with four cross-type alignment markers.
+    """Writefiled with four cross-type alignment markers.
 
     Parameters
     ----------
@@ -171,7 +171,7 @@ class WriteFieldCrossAligmentMark(SividdleDevice):
     params['alignment_offset_dy']: int
         Offset of alignment markers
         from edge of writefield in x-direction.
-    '''
+    """
 
     def __init__(self, params):
 
@@ -195,18 +195,27 @@ class WriteFieldCrossAligmentMark(SividdleDevice):
         delta_y = params['alignment_offset_dy']
 
         self << pg.copy(alignment_mark).move(
-            (bounding_box.xsize*0.5-delta_x, bounding_box.ysize*0.5-delta_y)
-        )
-        self << pg.copy(alignment_mark).move(
-            (bounding_box.xsize*0.5-delta_x, -(bounding_box.ysize*0.5-delta_y))
-        )
-        self << pg.copy(alignment_mark).move(
-            (-(bounding_box.xsize*0.5-delta_x), bounding_box.ysize*0.5-delta_y)
+            (
+                bounding_box.xsize * 0.5 - delta_x,
+                bounding_box.ysize * 0.5 - delta_y
+            )
         )
         self << pg.copy(alignment_mark).move(
             (
-                -(bounding_box.xsize*0.5-delta_x),
-                -(bounding_box.ysize*0.5-delta_y)
+                bounding_box.xsize * 0.5 - delta_x,
+                -(bounding_box.ysize * 0.5 - delta_y)
+            )
+        )
+        self << pg.copy(alignment_mark).move(
+            (
+                -(bounding_box.xsize * 0.5 - delta_x),
+                bounding_box.ysize * 0.5 - delta_y
+            )
+        )
+        self << pg.copy(alignment_mark).move(
+            (
+                -(bounding_box.xsize * 0.5 - delta_x),
+                -(bounding_box.ysize * 0.5 - delta_y)
             )
         )
 
@@ -215,8 +224,7 @@ class WriteFieldCrossAligmentMark(SividdleDevice):
 
 
 class EtchSlap(SividdleDevice):
-    ''' Generate two etching strip for isotropic etching tests.
-
+    """Generate two etching strip for isotropic etching tests.
 
     Parameters
     ----------
@@ -238,7 +246,7 @@ class EtchSlap(SividdleDevice):
     params['width_slab']: float:
         Separation of two slits which will result
         in width of slab.
-    '''
+    """
 
     def __init__(self, params):
 
@@ -255,19 +263,19 @@ class EtchSlap(SividdleDevice):
         slit = pg.rectangle(
             size=(self.width_slit, self.length_slab),
             layer=self.expose_layer
-            ).rotate(90)
+        ).rotate(90)
 
-        self << pg.copy(slit).movey((self.width_slit+self.width_slab)*0.5)
-        self << pg.copy(slit).movey(-(self.width_slit+self.width_slab)*0.5)
+        self << pg.copy(slit).movey((self.width_slit + self.width_slab) * 0.5)
+        self << pg.copy(slit).movey(-(self.width_slit + self.width_slab) * 0.5)
         self.label(
             text='{} \n slab_width = {:.2f} \
-                  \n slit_width = {:.2f} \
-                  \n slab_length = {:.2f}'.format(
-                    self.id_string,
-                    self.width_slab,
-                    self.width_slit,
-                    self.length_slab
-                ),
+                \n slit_width = {:.2f} \
+                \n slab_length = {:.2f}'.format(
+                self.id_string,
+                self.width_slab,
+                self.width_slit,
+                self.length_slab
+            ),
             position=(self.xmin, self.ymax),
             layer=self.label_layer
         )
@@ -277,7 +285,7 @@ class EtchSlap(SividdleDevice):
 
 
 class EquidistantRectangularSweep(SividdleDevice):
-    ''' Lays out equidistant grid of devices generated using different parameters.
+    """Lays out equidistant grid of devices generated using different parameters.
 
     Parameters
     ----------
@@ -323,7 +331,7 @@ class EquidistantRectangularSweep(SividdleDevice):
         is replicated in mirrored way).
     sweep_params['grid_label_params']['revert_letters']: boolean
         Revert odering of letters.
-    '''
+    """
 
     def __init__(self, sweep_params):
 
@@ -376,25 +384,25 @@ class EquidistantRectangularSweep(SividdleDevice):
 
             new_device = sp['device_class'](sp['device_params'])
 
-            if j < num_iter_x-1:
+            if j < num_iter_x - 1:
                 # One to the right, takes into account xsize.
                 current_xsize = device_dimensions[i, j, 0]
-                right_xsize = device_dimensions[i, j+1, 0]
-                padding_x[i, j+1] = padding_x[i, j] + \
-                    (current_xsize + right_xsize)*0.5 + sp['pitchx']
+                right_xsize = device_dimensions[i, j + 1, 0]
+                padding_x[i, j + 1] = padding_x[i, j] + \
+                    (current_xsize + right_xsize) * 0.5 + sp['pitchx']
 
-            if i < num_iter_y-1:
+            if i < num_iter_y - 1:
                 current_ysize = device_dimensions[i, j, 1]
-                top_ysize = device_dimensions[i+1, j, 1]
-                padding_y[i+1, j] = padding_y[i, j] + \
-                    (current_ysize+top_ysize)*0.5 + sp['pitchy']
+                top_ysize = device_dimensions[i + 1, j, 1]
+                padding_y[i + 1, j] = padding_y[i, j] + \
+                    (current_ysize + top_ysize) * 0.5 + sp['pitchy']
 
             # Add grid labels.
             if sp['grid_label']:
 
                 fp = FontProperties(style=sp['grid_label_params']['font'])
 
-                if i == 0 or i == num_iter_y-1:
+                if i == 0 or i == num_iter_y - 1:
                     text = number_label[j]
                     if i == 0:
                         orientation = 'b'
@@ -409,7 +417,7 @@ class EquidistantRectangularSweep(SividdleDevice):
                         orientation,
                         sp['grid_label_params']['label_dist']
                     )
-                if j == 0 or j == num_iter_x-1:
+                if j == 0 or j == num_iter_x - 1:
                     text = letter_label[i]
                     if j == 0:
                         orientation = 'l'

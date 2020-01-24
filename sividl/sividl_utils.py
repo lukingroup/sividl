@@ -7,6 +7,7 @@ from matplotlib.textpath import TextPath
 # This module helper function for sividl.devices
 # ==============================================================================
 
+
 # From https://gdspy.readthedocs.io/en/stable/gettingstarted.html
 def render_text(text, size=None, position=(0, 0),
                 font_prop=None, tolerance=0.1):
