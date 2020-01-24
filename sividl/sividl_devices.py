@@ -24,7 +24,7 @@ from matplotlib.font_manager import FontProperties
 import numpy as np
 from phidl import Device
 import phidl.geometry as pg
-from sividl_utils import image_to_binary_bitmap, render_text
+from sividl.sividl_utils import image_to_binary_bitmap, render_text
 
 
 class SividdleDevice(Device):

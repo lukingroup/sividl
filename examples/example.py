@@ -1,5 +1,10 @@
+# Bring your packages onto the path
+import os
+import sys
+
 import numpy as np
-import sividl_devices as sivp
+sys.path.append(os.path.abspath(os.path.join('.')))
+import sividl.sividl_devices as sivp  # noqa: E402
 
 # ==============================================================================
 # Demonstrates use of sividl.devices

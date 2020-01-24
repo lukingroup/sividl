@@ -138,3 +138,5 @@ dmypy.json
 
 #pytest
 .pytest_cache
+
+/untracked_projects
