@@ -308,18 +308,18 @@ class WaveGuide(SividdleDevice):
     ----------
     layer: int
         Layer of waveguide.
-    width: int
-        Width of waveguide.
-    height: int
+    length: float
+        length of waveguide.
+    height: float
         Height of waveguide.
     """
 
-    def __init__(self, layer, width, height):
+    def __init__(self, layer, length, height):
 
         SividdleDevice.__init__(self, name='waveguide')
 
         self.add_polygon(
-            [(0, 0), (width, 0), (width, height), (0, height)],
+            [(0, 0), (length, 0), (length, height), (0, height)],
             layer=layer
         )
         self.add_port(
@@ -331,13 +331,60 @@ class WaveGuide(SividdleDevice):
 
         self.add_port(
             name='wgport2',
-            midpoint=[width, height / 2],
+            midpoint=[length, height / 2],
             width=height,
             orientation=0
         )
 
         # Shift center of bounding box to origin.
         self.center = [0, 0]
+
+
+class Taper(SividdleDevice):
+    """Device describing a tapering section of a waveguide.
+
+    This device will hace two ports associated left and right ends
+    of the tapered sections, named 'tpport1' and 'tpport2'.
+
+    Parameters
+    ----------
+    layer: int
+        Layer of waveguide.
+    length: float
+        length of taper.
+    dy_min: float
+        Minimum height of taper.
+    dy_max: float
+        MAximum height of taper.
+    """
+
+    def __init__(self, layer, length, dy_min, dy_max):
+
+        SividdleDevice.__init__(self, name='taper')
+
+        self.add_polygon(
+            [
+                (0, 0),
+                (0, dy_min),
+                (length, (dy_max - dy_min) / 2 + dy_min),
+                (length, -(dy_max - dy_min) / 2)
+            ],
+            layer=2
+        )
+
+        self.add_port(
+            name='tpport1',
+            midpoint=[0, dy_min / 2],
+            width=dy_min,
+            orientation=180
+        )
+
+        self.add_port(
+            name='tpport2',
+            midpoint=[length, dy_min / 2],
+            width=dy_max,
+            orientation=0
+        )
 
 
 class EquidistantRectangularSweep(SividdleDevice):
