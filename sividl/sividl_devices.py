@@ -298,6 +298,53 @@ class EtchSlap(SividdleDevice):
         self.center = [0, 0]
 
 
+class Taper(SividdleDevice):
+    """Device describing a tapering section of a waveguide.
+
+    This device will hace two ports associated left and right ends
+    of the tapered sections, named 'tpport1' and 'tpport2'.
+
+    Parameters
+    ----------
+    layer: int
+        Layer of waveguide.
+    length: float
+        length of taper.
+    dy_min: float
+        Minimum height of taper.
+    dy_max: float
+        MAximum height of taper.
+    """
+
+    def __init__(self, layer, name, length, dy_min, dy_max):
+
+        SividdleDevice.__init__(self, name=name)
+
+        self.add_polygon(
+            [
+                (0, 0),
+                (0, dy_min),
+                (length, (dy_max - dy_min) / 2 + dy_min),
+                (length, -(dy_max - dy_min) / 2)
+            ],
+            layer=layer
+        )
+
+        self.add_port(
+            name='tpport1',
+            midpoint=[0, dy_min / 2],
+            width=dy_min,
+            orientation=180
+        )
+
+        self.add_port(
+            name='tpport2',
+            midpoint=[length, dy_min / 2],
+            width=dy_max,
+            orientation=0
+        )
+
+
 class WaveGuide(SividdleDevice):
     """Device describing a rectangular waveguide.
 
@@ -336,55 +383,181 @@ class WaveGuide(SividdleDevice):
             orientation=0
         )
 
-        # Shift center of bounding box to origin.
-        self.center = [0, 0]
+        # Store Layer
+        self.layer = layer
+
+    def add_anchors(self, dx_anchor, width_anchor,
+                    widthmax_anchor, length_anchor):
+        """Add anchors to the waveguide.
+
+        Parameters
+        ----------
+        dx_anchor: float
+            Distance of anchoring point to end of waveguide.
+        width_anchor: float
+            Width of anchor at anchoring point.
+        widthmax_anchor: float
+            Width of anchor opposite of anchoring point.
+        length_anchor: float
+            Length of anchor.
+        """
+        # add ports
+        self.add_port(
+            name='anchorport1',
+            midpoint=[dx_anchor, self.ysize],
+            width=width_anchor,
+            orientation=90
+        )
+
+        self.add_port(
+            name='anchorport2',
+            midpoint=[self.xsize - dx_anchor, self.ysize],
+            width=width_anchor,
+            orientation=90
+        )
+
+        self.add_port(
+            name='anchorport3',
+            midpoint=[dx_anchor, 0],
+            width=width_anchor,
+            orientation=-90
+        )
+
+        self.add_port(
+            name='anchorport4',
+            midpoint=[self.xsize - dx_anchor, 0],
+            width=width_anchor,
+            orientation=-90
+        )
+
+        # add achors
+        anchor = Taper(
+            self.layer,
+            'anchor',
+            length_anchor,
+            width_anchor,
+            widthmax_anchor
+        )
+
+        # Addd to new device
+        anchor_1 = self << anchor
+        anchor_2 = self << anchor
+        anchor_3 = self << anchor
+        anchor_4 = self << anchor
+
+        # Attach to anchors
+        anchor_1.connect(port='tpport1', destination=self.ports['anchorport1'])
+        anchor_2.connect(port='tpport1', destination=self.ports['anchorport2'])
+        anchor_3.connect(port='tpport1', destination=self.ports['anchorport3'])
+        anchor_4.connect(port='tpport1', destination=self.ports['anchorport4'])
+
+        # Add ports to new device
+        self.add_port(port=anchor_1.ports['tpport2'], name='extanchorport1')
+        self.add_port(port=anchor_2.ports['tpport2'], name='extanchorport2')
+        self.add_port(port=anchor_3.ports['tpport2'], name='extanchorport3')
+        self.add_port(port=anchor_4.ports['tpport2'], name='extanchorport4')
 
 
-class Taper(SividdleDevice):
-    """Device describing a tapering section of a waveguide.
-
-    This device will hace two ports associated left and right ends
-    of the tapered sections, named 'tpport1' and 'tpport2'.
+class TaperedWaveGuide(SividdleDevice):
+    """Device describing tapered waveguide.
 
     Parameters
     ----------
-    layer: int
-        Layer of waveguide.
-    length: float
-        length of taper.
-    dy_min: float
-        Minimum height of taper.
-    dy_max: float
-        MAximum height of taper.
+    params: dict
+        Dictionary containing the parameters of the tapered waveguide
+    params['len_wg']: float
+        Length of waveguide section.
+    params['height_wg']: float
+        Height of waveguide section.
+    params['len_tp_left']: float
+        Lenght of left tapered section.
+    params['len_tp_rightt']: float
+        Lenght of right tapered section.
+    params['width_tp']: float
+        Final width of tapered section.
+    params['add_anchors']: boolean
+        If True, add anchors
+    params['dx_anchor']: float
+        Distance of anchoring point to end of waveguide.
+    params['width_anchor']: float
+        Width of anchor at anchoring point.
+    params['widthmax_anchor']: float
+        Width of anchor opposite of anchoring point.
+    params['length_anchor']: float
+        Length of anchor.
+    params['invert']: boolean
+        If True, invert layer by bounding box.
+        This is useful if we're working with positive
+        photoresists.
+    params['invert_layer']: float
+        Target layer for inverted design.
     """
 
-    def __init__(self, layer, length, dy_min, dy_max):
+    def __init__(self, params):
 
-        SividdleDevice.__init__(self, name='taper')
+        SividdleDevice.__init__(self, name='Tapered_Waveguide')
 
-        self.add_polygon(
-            [
-                (0, 0),
-                (0, dy_min),
-                (length, (dy_max - dy_min) / 2 + dy_min),
-                (length, -(dy_max - dy_min) / 2)
-            ],
-            layer=2
+        # Generate waveguide.
+        waveguide = WaveGuide(
+            params['layer'],
+            params['len_wg'],
+            params['height_wg']
+        )
+
+        # Add anchors.
+        if params["add_anchors"]:
+            waveguide.add_anchors(
+                params["dx_anchor"],
+                params["width_anchor"],
+                params["widthmax_anchor"],
+                params["length_anchor"]
+            )
+
+        # Generate tapered sections.
+        taper_left, taper_right = [
+            Taper(
+                layer=params['layer'],
+                name='taper_left',
+                dy_min=params['width_tp'],
+                dy_max=params['height_wg'],
+                length=length
+            ) for length in [params['len_tp_left'], params['len_tp_right']]
+        ]
+
+        # Add waveguide and taper to device.
+        waveguide_on_device = self << waveguide
+        taper_left_on_device = self << taper_left
+        taper_right_on_device = self << taper_right
+
+        # connect the ports
+        waveguide_on_device.connect(
+            port='wgport1',
+            destination=taper_left_on_device.ports['tpport2']
+        )
+
+        taper_right_on_device.connect(
+            port='tpport2',
+            destination=waveguide_on_device.ports['wgport2']
+        )
+
+        # add ports to new device
+        self.add_port(
+            port=taper_left_on_device.ports['tpport1'],
+            name='tpwgport1'
         )
 
         self.add_port(
-            name='tpport1',
-            midpoint=[0, dy_min / 2],
-            width=dy_min,
-            orientation=180
+            port=taper_right_on_device.ports['tpport1'],
+            name='tpwgport2'
         )
 
-        self.add_port(
-            name='tpport2',
-            midpoint=[length, dy_min / 2],
-            width=dy_max,
-            orientation=0
-        )
+        # Add the inverse of the design to another layer
+        # (for positive photoresist usage)
+        if params['invert']:
+            self << self.invert(params['invert_layer'])
+
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
 
 
 class EquidistantRectangularSweep(SividdleDevice):
