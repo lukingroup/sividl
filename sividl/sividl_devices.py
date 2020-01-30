@@ -556,8 +556,61 @@ class TaperedWaveGuide(SividdleDevice):
         if params['invert']:
             self << self.invert(params['invert_layer'])
 
+        if params['add_taper_marker']:
+            self.add_arrow_markers(params)
+
         # Shift center of bounding box to origin.
         self.center = [0, 0]
+
+    def add_arrow_markers(self, params):
+        """Add arrow markers.
+
+        This will generate three arrow markers,
+        two indicating where the tapered regions start and one
+        indicating which side has the left taper.
+
+        """
+        up_arrow_params = {
+            'fontsize'   : 5,
+            'name'       : 'taperlabel',
+            'style'     : 'normal',
+            'layer'     : 3,
+            'text'      : '↑',
+        }
+
+        # Render arrow, and move to beginning of left taper.
+
+        init_ysize = self.ysize  # Will get modified by adding of arrow.
+        up_arrow = RenderedText(up_arrow_params)
+        self << up_arrow.move(
+            [
+                params['len_tp_left'],
+                -((init_ysize + up_arrow.ysize) * 0.5 + 0.15 * init_ysize)
+            ]
+        )
+
+        down_arrow_params = up_arrow_params
+        down_arrow_params['text'] = '↓'
+
+        # Render arrow, and move to beginning of right taper.
+        down_arrow = RenderedText(down_arrow_params)
+        self << down_arrow.move(
+            [
+                params['len_tp_left'] + params['len_wg'],
+                +((init_ysize + down_arrow.ysize) * 0.5 + 0.15 * init_ysize)
+            ]
+        )
+
+        # Render arrow, and move to beginning of right taper.
+        right_arrow_params = up_arrow_params
+        right_arrow_params['text'] = '→'
+        right_arrow = RenderedText(right_arrow_params)
+        self << right_arrow.move(
+            [
+                0,
+                -((init_ysize + down_arrow.ysize) * 0.5 + 0.15 * init_ysize)
+            ]
+        )
 
 
 class EquidistantRectangularSweep(SividdleDevice):
