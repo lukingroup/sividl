@@ -122,10 +122,10 @@ class BoundingBox(SividdleDevice):
 
     Parameters
     ----------
-    wf_size: int
-        Write filed size in um.
     layer: int
         Layer of bounding box.
+    wf_size: int
+        Write filed size in um.
     """
 
     def __init__(self, layer, wf_size):
@@ -292,6 +292,48 @@ class EtchSlap(SividdleDevice):
             ),
             position=(self.xmin, self.ymax),
             layer=self.label_layer
+        )
+
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
+
+
+class WaveGuide(SividdleDevice):
+    """Device describing a rectangular waveguide.
+
+    This device will hace two ports associated with the axis defined
+    by the 'height' dimension, which are named ''wgport1' and 'wgport2'.
+
+    Parameters
+    ----------
+    layer: int
+        Layer of waveguide.
+    width: int
+        Width of waveguide.
+    height: int
+        Height of waveguide.
+    """
+
+    def __init__(self, layer, width, height):
+
+        SividdleDevice.__init__(self, name='waveguide')
+
+        self.add_polygon(
+            [(0, 0), (width, 0), (width, height), (0, height)],
+            layer=layer
+        )
+        self.add_port(
+            name='wgport1',
+            midpoint=[0, height / 2],
+            width=height,
+            orientation=180
+        )
+
+        self.add_port(
+            name='wgport2',
+            midpoint=[width, height / 2],
+            width=height,
+            orientation=0
         )
 
         # Shift center of bounding box to origin.
