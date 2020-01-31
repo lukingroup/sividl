@@ -39,19 +39,32 @@ class SividdleDevice(Device):
     def __init__(self, name):
         Device.__init__(self, name=name)
 
-    def invert(self, layer):
+    def invert(self, layer, padding_ratio=0):
         """Inverts a pattern from positive to negative or vice versa.
 
         Parameters
         ----------
         layer: string
             Layer of new, inverted device.
+        padding_ratio: float
+            Add padding to bounding box used for boolean
+            operation. Will be multiplied with xsiye, ysize
         """
         bounding_box = Device('interim_bounding_box')
-        bounding_box.add_polygon([(self.xmin, self.ymin),
-                                  (self.xmin, self.ymax),
-                                  (self.xmax, self.ymax),
-                                  (self.xmax, self.ymin)], layer=layer)
+
+        # Obtain correct padding
+        x_padding = padding_ratio * self.xsize
+        y_padding = padding_ratio * self.ysize
+
+        bounding_box.add_polygon(
+            [
+                (self.xmin - x_padding, self.ymin - y_padding),
+                (self.xmin - x_padding, self.ymax + y_padding),
+                (self.xmax + x_padding, self.ymax + y_padding),
+                (self.xmax + x_padding, self.ymin - y_padding)
+            ],
+            layer=layer
+        )
 
         # perform substraction for positive e-beam resist
         inverse = pg.boolean(
@@ -497,6 +510,8 @@ class TaperedWaveGuide(SividdleDevice):
 
         SividdleDevice.__init__(self, name='Tapered_Waveguide')
 
+        self.params = params
+
         # Generate waveguide.
         waveguide = WaveGuide(
             params['layer'],
@@ -557,12 +572,12 @@ class TaperedWaveGuide(SividdleDevice):
             self << self.invert(params['invert_layer'])
 
         if params['add_taper_marker']:
-            self.add_arrow_markers(params)
+            self.add_arrow_markers()
 
         # Shift center of bounding box to origin.
         self.center = [0, 0]
 
-    def add_arrow_markers(self, params):
+    def add_arrow_markers(self):
         """Add arrow markers.
 
         This will generate three arrow markers,
@@ -570,6 +585,8 @@ class TaperedWaveGuide(SividdleDevice):
         indicating which side has the left taper.
 
         """
+        params = self.params
+
         up_arrow_params = {
             'fontsize'   : 5,
             'name'       : 'taperlabel',
@@ -613,7 +630,102 @@ class TaperedWaveGuide(SividdleDevice):
         )
 
 
-class EquidistantRectangularSweep(SividdleDevice):
+class EllipseArray(SividdleDevice):
+    """Device containing an Array of ellipses.
+
+    These arrays can be used to construct photonic crystal cavities.
+    Nonclature carried over from https://arxiv.org/pdf/1907.13200.pdf
+
+    Parameters
+    ----------
+    layer: int
+        Target layer.
+    hx_array: numpy.array
+        Width of ellipses.
+    hy_array: numpy.array
+        Height of ellipses.
+    a_consts_array: numpy.array:
+        Lattice constants.
+    """
+
+    def __init__(self, layer, hx_array, hy_array, a_consts_array):
+
+        # Check correct array lengths
+        assert len(hy_array) is len(hx_array), \
+            "Please provide arrays of equal length"
+
+        assert len(a_consts_array) is len(hx_array) - 1, \
+            "Please provide arrays of equal length"
+
+        SividdleDevice.__init__(self, name='EllipseArray')
+
+        # Prepend 0 to lattice constant array for convenience
+        a_consts_array = np.insert(a_consts_array, 0, 0)
+        shift = 0
+
+        # Generate ellipses
+        for (hx, hy, a) in zip(hx_array, hy_array, a_consts_array):
+            shift += a
+            ellipse = gdspy.Round(
+                (0 + shift, 0),
+                [hx * 0.5, hy * 0.5],
+                tolerance=1e-2,
+                layer=layer
+            )
+            self.add(ellipse)
+
+
+class AdiabaticTaperedEllipseArray(SividdleDevice):
+    """Device containing an Array of ellipses tapering down.
+
+    The ellipses are tapered down from hy_init to hy_final while maintaining
+    the aspect ratio. The lattice constant is assumed to be constant
+
+    These arrays can be used to construct photonic crystal cavities.
+    Nonclature carried over from https://arxiv.org/pdf/1907.13200.pdf.
+
+    Parameters
+    ----------
+    hx_init: float
+        Initial value of hx.
+    hy_init: float
+        Initial value of hx.
+    hy_final: float
+        Final value of hy.
+    a_const: float:
+        Lattice constant.
+    num_taper: int
+        Number of cells.
+    """
+
+    def __init__(self, layer, hx_init, hy_init,
+                 hy_final, a_const, num_taper):
+
+        SividdleDevice.__init__(self, name='AdiabaticTaperedEllipseArray')
+
+        # Save ratio
+        ratio = hx_init / hy_init
+
+        # Construct Hx array.
+        hx_array = np.linspace(
+            hy_init,
+            hy_final,
+            num_taper
+        )
+
+        # Construct Hy array by scaling Hx array.
+        hy_array = hx_array / ratio
+
+        # Construct array of constant lattice consants.
+        a_consts_array = np.ones(num_taper - 1) * a_const
+
+        self << EllipseArray(layer, hx_array, hy_array, a_consts_array)
+
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
+
+
+class RectangularSweep(SividdleDevice):
     """Lays out equidistant grid of devices generated using different parameters.
 
     Parameters
@@ -639,6 +751,8 @@ class EquidistantRectangularSweep(SividdleDevice):
     sweep_params['pitchx'] / sweep_params['pitchy']: float
         Separation of bounding boxes of different
         devices in x-direction / y-direction.
+    sweep_params['equidistant_grid']: boolean
+       If true, adjust pitch in order to take device dimensions into account.
     sweep_params['grid_label']: boolean
         If True, label grid by assigning each
         device a coordinate 'A0', 'A1', etc.
@@ -717,14 +831,18 @@ class EquidistantRectangularSweep(SividdleDevice):
                 # One to the right, takes into account xsize.
                 current_xsize = device_dimensions[i, j, 0]
                 right_xsize = device_dimensions[i, j + 1, 0]
+                # Only adjust padding if equidistant_grid = True
                 padding_x[i, j + 1] = padding_x[i, j] + \
-                    (current_xsize + right_xsize) * 0.5 + sp['pitchx']
+                    (current_xsize + right_xsize) * 0.5 * \
+                    sp['equidistant_grid'] + sp['pitchx']
 
             if i < num_iter_y - 1:
                 current_ysize = device_dimensions[i, j, 1]
                 top_ysize = device_dimensions[i + 1, j, 1]
+                # Only adjust padding if equidistant_grid = True
                 padding_y[i + 1, j] = padding_y[i, j] + \
-                    (current_ysize + top_ysize) * 0.5 + sp['pitchy']
+                    (current_ysize + top_ysize) * 0.5 * \
+                    sp['equidistant_grid'] + sp['pitchy']
 
             # Add grid labels.
             if sp['grid_label']:

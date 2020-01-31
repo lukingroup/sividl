@@ -83,11 +83,12 @@ def run_example():
         'pitchx'            : 13,
         'pitchy'            : 13,
         'grid_label'        : True,
-        'grid_label_params' : grid_label_params
+        'grid_label_params' : grid_label_params,
+        'equidistant_grid'  : True
     }
 
     # Generate sweep in horizontal direction.
-    sweep_box_horizontal = sivp.EquidistantRectangularSweep(sweep_params)
+    sweep_box_horizontal = sivp.RectangularSweep(sweep_params)
 
     # Mirror device and sweep in vertical direction.
 
@@ -102,7 +103,7 @@ def run_example():
     sweep_params['grid_label_params'] = grid_label_params
 
     # Generate sweep in horizontal direction.
-    sweep_box_vertical = sivp.EquidistantRectangularSweep(sweep_params)
+    sweep_box_vertical = sivp.RectangularSweep(sweep_params)
 
     # Add two sweeps to write field and move accordingly.
     write_field << sweep_box_horizontal.move([-100, +105])
