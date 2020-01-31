@@ -400,7 +400,7 @@ class WaveGuide(SividdleDevice):
         self.layer = layer
 
     def add_anchors(self, dx_anchor, width_anchor,
-                    widthmax_anchor, length_anchor):
+                    widthmax_anchor, length_anchor, which):
         """Add anchors to the waveguide.
 
         Parameters
@@ -413,7 +413,15 @@ class WaveGuide(SividdleDevice):
             Width of anchor opposite of anchoring point.
         length_anchor: float
             Length of anchor.
+        which: list
+            Which anchor to add, labelled:
+            1 ..... 2
+            3 ..... 4
+            Default: All anchors.
         """
+        if which is None:
+            which = [1, 2, 3, 4]
+
         # add ports
         self.add_port(
             name='anchorport1',
@@ -453,22 +461,46 @@ class WaveGuide(SividdleDevice):
         )
 
         # Addd to new device
-        anchor_1 = self << anchor
-        anchor_2 = self << anchor
-        anchor_3 = self << anchor
-        anchor_4 = self << anchor
-
-        # Attach to anchors
-        anchor_1.connect(port='tpport1', destination=self.ports['anchorport1'])
-        anchor_2.connect(port='tpport1', destination=self.ports['anchorport2'])
-        anchor_3.connect(port='tpport1', destination=self.ports['anchorport3'])
-        anchor_4.connect(port='tpport1', destination=self.ports['anchorport4'])
-
-        # Add ports to new device
-        self.add_port(port=anchor_1.ports['tpport2'], name='extanchorport1')
-        self.add_port(port=anchor_2.ports['tpport2'], name='extanchorport2')
-        self.add_port(port=anchor_3.ports['tpport2'], name='extanchorport3')
-        self.add_port(port=anchor_4.ports['tpport2'], name='extanchorport4')
+        if 1 in which:
+            anchor_1 = self << anchor
+            anchor_1.connect(
+                port='tpport1',
+                destination=self.ports['anchorport1']
+            )
+            self.add_port(
+                port=anchor_1.ports['tpport2'],
+                name='extanchorport1'
+            )
+        if 2 in which:
+            anchor_2 = self << anchor
+            anchor_2.connect(
+                port='tpport1',
+                destination=self.ports['anchorport2']
+            )
+            self.add_port(
+                port=anchor_2.ports['tpport2'],
+                name='extanchorport2'
+            )
+        if 3 in which:
+            anchor_3 = self << anchor
+            anchor_3.connect(
+                port='tpport1',
+                destination=self.ports['anchorport3']
+            )
+            self.add_port(
+                port=anchor_3.ports['tpport2'],
+                name='extanchorport3'
+            )
+        if 4 in which:
+            anchor_4 = self << anchor
+            anchor_4.connect(
+                port='tpport1',
+                destination=self.ports['anchorport4']
+            )
+            self.add_port(
+                port=anchor_4.ports['tpport2'],
+                name='extanchorport4'
+            )
 
 
 class TaperedWaveGuide(SividdleDevice):
@@ -488,8 +520,10 @@ class TaperedWaveGuide(SividdleDevice):
         Lenght of right tapered section.
     params['width_tp']: float
         Final width of tapered section.
-    params['add_anchors']: boolean
-        If True, add anchors
+    params['which_anchors']: list
+        Which anchor to add, labelled:
+        1 ..... 2
+        3 ..... 4
     params['dx_anchor']: float
         Distance of anchoring point to end of waveguide.
     params['width_anchor']: float
@@ -520,13 +554,13 @@ class TaperedWaveGuide(SividdleDevice):
         )
 
         # Add anchors.
-        if params["add_anchors"]:
-            waveguide.add_anchors(
-                params["dx_anchor"],
-                params["width_anchor"],
-                params["widthmax_anchor"],
-                params["length_anchor"]
-            )
+        waveguide.add_anchors(
+            params["dx_anchor"],
+            params["width_anchor"],
+            params["widthmax_anchor"],
+            params["length_anchor"],
+            params['which_anchors']
+        )
 
         # Generate tapered sections.
         taper_left, taper_right = [
@@ -723,6 +757,48 @@ class AdiabaticTaperedEllipseArray(SividdleDevice):
 
         # Shift center of bounding box to origin.
         self.center = [0, 0]
+
+
+class RetroReflector(SividdleDevice):
+    """Device containing retroreflector.
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing the parameters of the tapered waveguide
+    params['len_wg']: float
+        Length of waveguide section.
+    params['height_wg']: float
+        Height of waveguide section.
+    params['len_tp_left']: float
+        Lenght of left tapered section.
+    params['dx_anchor']: float
+        Distance of anchoring point to end of waveguide.
+    params['width_anchor']: float
+        Width of anchor at anchoring point.
+    params['widthmax_anchor']: float
+        Width of anchor opposite of anchoring point.
+    params['length_anchor']: float
+        Length of anchor.
+    params['invert']: boolean
+        If True, invert layer by bounding box.
+        This is useful if we're working with positive
+        photoresists.
+    params['invert_layer']: float
+        Target layer for inverted design.
+    """
+
+    def __init__(self, params):
+
+        SividdleDevice.__init__(self, name='Retroreflector')
+
+        params['which_anchors'] = [1, 3]
+        params['add_taper_marker'] = False
+        params['len_tp_right'] = 0
+
+        waveguide = TaperedWaveGuide(params)
+
+        self << waveguide
 
 
 class RectangularSweep(SividdleDevice):
