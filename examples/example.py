@@ -80,11 +80,12 @@ def run_example():
         'varsy'             : slit_widths,
         'keyx'              : 'width_slab',
         'keyy'              : 'width_slit',
-        'pitchx'            : 13,
+        'pitchx'            : 30,
         'pitchy'            : 13,
         'grid_label'        : True,
         'grid_label_params' : grid_label_params,
-        'equidistant_grid'  : True
+        'equidistant_grid'  : True,
+        'staggered'         : False
     }
 
     # Generate sweep in horizontal direction.

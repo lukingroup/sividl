@@ -16,6 +16,7 @@
 
 from __future__ import absolute_import, division, print_function
 
+import copy
 import itertools as it
 import string
 
@@ -39,29 +40,28 @@ class SividdleDevice(Device):
     def __init__(self, name):
         Device.__init__(self, name=name)
 
-    def invert(self, layer, padding_ratio=0):
+    def invert(self, layer, padding=None):
         """Inverts a pattern from positive to negative or vice versa.
 
         Parameters
         ----------
         layer: string
             Layer of new, inverted device.
-        padding_ratio: float
-            Add padding to bounding box used for boolean
-            operation. Will be multiplied with xsiye, ysize
+        padding: np.array
+            Array containing padding of bounding box used to substract device
+            [left, right, top, bottom]
         """
         bounding_box = Device('interim_bounding_box')
 
-        # Obtain correct padding
-        x_padding = padding_ratio * self.xsize
-        y_padding = padding_ratio * self.ysize
+        if padding is None:
+            padding = [0, 0, 0, 0]
 
         bounding_box.add_polygon(
             [
-                (self.xmin - x_padding, self.ymin - y_padding),
-                (self.xmin - x_padding, self.ymax + y_padding),
-                (self.xmax + x_padding, self.ymax + y_padding),
-                (self.xmax + x_padding, self.ymin - y_padding)
+                (self.xmin - padding[0], self.ymin - padding[3]),
+                (self.xmin - padding[0], self.ymax + padding[2]),
+                (self.xmax + padding[1], self.ymax + padding[2]),
+                (self.xmax + padding[1], self.ymin - padding[3])
             ],
             layer=layer
         )
@@ -372,9 +372,11 @@ class WaveGuide(SividdleDevice):
         length of waveguide.
     height: float
         Height of waveguide.
+    photonic_cristal_params: TBD
+    photonic_crystal_params
     """
 
-    def __init__(self, layer, length, height):
+    def __init__(self, layer, length, height, photonic_crystal_params=None):
 
         SividdleDevice.__init__(self, name='waveguide')
 
@@ -395,6 +397,28 @@ class WaveGuide(SividdleDevice):
             width=height,
             orientation=0
         )
+
+        # Add photonic crytstal
+        if photonic_crystal_params is not None:
+
+            holes = AdiabaticTaperedEllipseArray(
+                photonic_crystal_params['holes_layer'],
+                photonic_crystal_params['hx_init'],
+                photonic_crystal_params['hy_init'],
+                photonic_crystal_params['hy_final'],
+                photonic_crystal_params['a_const'],
+                photonic_crystal_params['num_taper'],
+                photonic_crystal_params['num_cells'],
+                flip=True
+            )
+
+            # wg
+            self << holes.move(
+                (
+                    holes.xsize * 0.5 + photonic_crystal_params['dx_holes'],
+                    self.ysize * 0.5
+                )
+            )
 
         # Store Layer
         self.layer = layer
@@ -538,6 +562,12 @@ class TaperedWaveGuide(SividdleDevice):
         photoresists.
     params['invert_layer']: float
         Target layer for inverted design.
+    params['taper_gap_left']: float
+        Gap between left taper and etch box.
+    params['taper_gap_right']: float
+        Gap between right taper and etch box.
+    params['photonic_crystal_params']: dict
+        Dictionary containing the parameters for the photonic crystal
     """
 
     def __init__(self, params):
@@ -550,7 +580,8 @@ class TaperedWaveGuide(SividdleDevice):
         waveguide = WaveGuide(
             params['layer'],
             params['len_wg'],
-            params['height_wg']
+            params['height_wg'],
+            params['photonic_crystal_params']
         )
 
         # Add anchors.
@@ -603,13 +634,22 @@ class TaperedWaveGuide(SividdleDevice):
         # Add the inverse of the design to another layer
         # (for positive photoresist usage)
         if params['invert']:
-            self << self.invert(params['invert_layer'])
+            self << self.invert(
+                params['invert_layer'],
+                [
+                    params['taper_gap_left'],
+                    params['taper_gap_right'],
+                    0,
+                    0
+                ]
+            )
 
         if params['add_taper_marker']:
             self.add_arrow_markers()
-
-        # Shift center of bounding box to origin.
-        self.center = [0, 0]
+            # Compensate for the arrows in assignment of center.
+            self.center = [0, -params['width_tp'] * 0.5]
+        else:
+            self.center = [0, 0]
 
     def add_arrow_markers(self):
         """Add arrow markers.
@@ -622,7 +662,7 @@ class TaperedWaveGuide(SividdleDevice):
         params = self.params
 
         up_arrow_params = {
-            'fontsize'   : 5,
+            'fontsize'   : 12,
             'name'       : 'taperlabel',
             'style'     : 'normal',
             'layer'     : 3,
@@ -632,23 +672,35 @@ class TaperedWaveGuide(SividdleDevice):
         # Render arrow, and move to beginning of left taper.
 
         init_ysize = self.ysize  # Will get modified by adding of arrow.
-        up_arrow = RenderedText(up_arrow_params)
-        self << up_arrow.move(
+        up_arrow_1 = RenderedText(up_arrow_params)
+        up_arrow_2 = RenderedText(up_arrow_params)
+        up_arrow_3 = RenderedText(up_arrow_params)
+
+        # Arrow pointing at end of taper section, left.
+        self << up_arrow_1.move(
             [
                 params['len_tp_left'],
-                -((init_ysize + up_arrow.ysize) * 0.5 + 0.15 * init_ysize)
+                -((init_ysize + up_arrow_1.ysize) * 0.5
+                  + 0.15 * init_ysize + 5)
             ]
         )
 
-        down_arrow_params = up_arrow_params
-        down_arrow_params['text'] = '↓'
-
-        # Render arrow, and move to beginning of right taper.
-        down_arrow = RenderedText(down_arrow_params)
-        self << down_arrow.move(
+        # Arrow pointing at end of taper section, right.
+        self << up_arrow_2.move(
             [
                 params['len_tp_left'] + params['len_wg'],
-                +((init_ysize + down_arrow.ysize) * 0.5 + 0.15 * init_ysize)
+                -((init_ysize + up_arrow_2.ysize) * 0.5
+                  + 0.15 * init_ysize + 5)
+            ]
+        )
+
+        # Arrow pointing at end of taper section, right.
+        self << up_arrow_3.move(
+            [
+                params['len_tp_left']
+                + params['len_tp_right'] + params['len_wg'],
+                -((init_ysize + up_arrow_3.ysize) * 0.5
+                  + 0.15 * init_ysize + 5)
             ]
         )
 
@@ -658,8 +710,9 @@ class TaperedWaveGuide(SividdleDevice):
         right_arrow = RenderedText(right_arrow_params)
         self << right_arrow.move(
             [
-                0,
-                -((init_ysize + down_arrow.ysize) * 0.5 + 0.15 * init_ysize)
+                right_arrow.xsize * 0.5,
+                -((init_ysize + right_arrow.ysize) * 0.5
+                  + 0.15 * init_ysize + 5)
             ]
         )
 
@@ -703,7 +756,7 @@ class EllipseArray(SividdleDevice):
             ellipse = gdspy.Round(
                 (0 + shift, 0),
                 [hx * 0.5, hy * 0.5],
-                tolerance=1e-2,
+                tolerance=1e-4,
                 layer=layer
             )
             self.add(ellipse)
@@ -729,29 +782,47 @@ class AdiabaticTaperedEllipseArray(SividdleDevice):
     a_const: float:
         Lattice constant.
     num_taper: int
-        Number of cells.
+        Number of tapered cells.
+    num_cells: int
+        Number of non-tapered cells.
+    flip: boolen
+        If True, flip array. Tapered section
+        now is left.
     """
 
     def __init__(self, layer, hx_init, hy_init,
-                 hy_final, a_const, num_taper):
+                 hy_final, a_const, num_taper, num_cells, flip):
 
         SividdleDevice.__init__(self, name='AdiabaticTaperedEllipseArray')
 
-        # Save ratio
-        ratio = hx_init / hy_init
+        # Arrays of untapered devices
+        hx_array_init = np.ones(num_cells) * hx_init
+        hy_array_init = np.ones(num_cells) * hy_init
 
         # Construct Hx array.
-        hx_array = np.linspace(
+        hy_array_tapered = np.linspace(
             hy_init,
             hy_final,
             num_taper
         )
 
-        # Construct Hy array by scaling Hx array.
-        hy_array = hx_array / ratio
+        # Construct Hx array.
+        hx_array_tapered = np.linspace(
+            hx_init,
+            hy_final,
+            num_taper
+        )
+
+        # Appending tapered and nontapered arrays
+        hx_array = np.append(hx_array_init, hx_array_tapered)
+        hy_array = np.append(hy_array_init, hy_array_tapered)
+
+        if flip:
+            hx_array = np.flip(hx_array)
+            hy_array = np.flip(hy_array)
 
         # Construct array of constant lattice consants.
-        a_consts_array = np.ones(num_taper - 1) * a_const
+        a_consts_array = np.ones(num_taper + num_cells - 1) * a_const
 
         self << EllipseArray(layer, hx_array, hy_array, a_consts_array)
 
@@ -765,7 +836,7 @@ class RetroReflector(SividdleDevice):
     Parameters
     ----------
     params: dict
-        Dictionary containing the parameters of the tapered waveguide
+        Dictionary containing the parameters of the retroreflector.
     params['len_wg']: float
         Length of waveguide section.
     params['height_wg']: float
@@ -786,19 +857,125 @@ class RetroReflector(SividdleDevice):
         photoresists.
     params['invert_layer']: float
         Target layer for inverted design.
+        hx_init: float
+        Initial value of hx.
+    params['hy_init']: float
+        Initial value of hx.
+    params['hy_final']: float
+        Final value of hy.
+    params['a_const']: float:
+        Lattice constant.
+    params['num_taper']: int
+        Number of tapered cells.
+    params['num_cells']: int
+        Number of non-tapered cells.
+    params['dx_holes']: float
+        Distance from holes to start of
+        waveguide.
+    params['which_anchors']: list
+        Which anchor to add, labelled:
+        1 ..... 2
+        3 ..... 4
     """
 
     def __init__(self, params):
 
         SividdleDevice.__init__(self, name='Retroreflector')
 
-        params['which_anchors'] = [1, 3]
         params['add_taper_marker'] = False
         params['len_tp_right'] = 0
 
         waveguide = TaperedWaveGuide(params)
 
         self << waveguide
+
+        # Carry over ports
+        self.add_port(
+            port=waveguide.ports['tpwgport1'],
+            name='retroport1'
+        )
+
+        self.add_port(
+            port=waveguide.ports['tpwgport2'],
+            name='retroport2'
+        )
+
+
+class InterPoserRetroReflector(SividdleDevice):
+    """Tapered waveguide - retroreflector combination.
+
+    Parameters
+    ----------
+    params: dict
+        Device parameter.
+
+    For keys, see docstring of RetroReflector
+    and TaperedWaveGuide.
+
+    """
+
+    def __init__(self, params):
+
+        SividdleDevice.__init__(
+            self,
+            name='tapered_waveguide_with_retroreflector'
+        )
+
+        # Re-wrap photonic crystal parameters
+        photonic_crystal_params = {
+            'hx_init'                           : params['hx_init'],
+            'hy_init'                           : params['hy_init'],
+            'hy_final'                          : params['hy_final'],
+            'a_const'                           : params['a_const'],
+            'num_taper'                         : params['num_taper'],
+            'num_cells'                         : params['num_cells'],
+            'dx_holes'                          : params['dx_holes'],
+            'holes_layer'                       : params['holes_layer'],
+        }
+
+        # Adjust params array for waveguide
+        params['taper_gap_right'] = 0
+        params['which_anchors'] = params['which_anchors_waveguide']
+        params['len_tp_left'] = params['len_tp_left_waveguide']
+        params['len_tp_right'] = params['len_tp_right_waveguide']
+        params['photonic_crystal_params'] = None
+        params['dx_anchor'] = params['dx_anchor_waveguide']
+        params['len_wg'] = params['len_wg_waveguide']
+        params['width_anchor'] = params['width_anchor_waveguide']
+        params['widthmax_anchor'] = params['widthmax_anchor_waveguide']
+        params['height_wg'] = params['height_waveguide']
+
+        # Make waveguide
+        waveguide = TaperedWaveGuide(params)
+
+        # Adjust params array for retroreflector
+        params['taper_gap_right'] = 0
+        params['taper_gap_left'] = 0
+        params['which_anchors'] = params['which_anchors_retroreflector']
+        params['len_tp_left'] = params['len_tp_left_retroreflector']
+        params['dx_anchor'] = params['dx_anchor_retroreflector']
+        params['photonic_crystal_params'] = photonic_crystal_params
+        params['len_wg'] = params['len_wg_retroreflector']
+        params['width_anchor'] = params['width_anchor_retroreflector']
+        params['widthmax_anchor'] = params['widthmax_anchor_retroreflector']
+        params['height_wg'] = params['height_retroreflector']
+
+        retro = RetroReflector(params)
+
+        waveguide_on_device = self << waveguide
+        retro_on_device = self << retro.movex(
+            -(waveguide.xsize - retro.xsize) * 0.5
+            + waveguide.xsize + params['dist_conn']
+        )
+
+        # connect the ports
+        waveguide_on_device.connect(
+            port='tpwgport2',
+            destination=retro_on_device.ports['retroport1']
+        )
+
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
 
 
 class RectangularSweep(SividdleDevice):
@@ -850,12 +1027,17 @@ class RectangularSweep(SividdleDevice):
         is replicated in mirrored way).
     sweep_params['grid_label_params']['revert_letters']: boolean
         Revert odering of letters.
+    sweep_params['staggered']: boolean
+        If True, stagger columns in y direction.
+    sweep_params['staggerd_y_pitch']: float
+        Pitch in y-direction applied it staggerd_y_pitch
+        is set to True.
     """
 
     def __init__(self, sweep_params):
 
         # Shorten
-        sp = sweep_params
+        sp = copy.deepcopy(sweep_params)
 
         SividdleDevice.__init__(self, name=sp['sweep_name'])
 
@@ -881,7 +1063,8 @@ class RectangularSweep(SividdleDevice):
 
         # make devices
         # TODO: Adjust for non quadratic grid
-        for i, j in it.product(range(num_iter_x), repeat=2):
+
+        for i, j in it.product(range(num_iter_x), range(num_iter_y)):
             sp['device_params'][sp['keyx']] = sp['varsx'][i]
             sp['device_params'][sp['keyy']] = sp['varsy'][j]
             sp['device_params']['id_string'] = '{}{}'.format(
@@ -893,7 +1076,11 @@ class RectangularSweep(SividdleDevice):
             device_dimensions[i, j, 0] = device.xsize
             device_dimensions[i, j, 1] = device.ysize
 
-        for i, j in it.product(range(num_iter_x), repeat=2):
+        for i, j in it.product(range(num_iter_x), range(num_iter_y)):
+
+            # Refresh copy in case key entries have been altered
+            sp = copy.deepcopy(sweep_params)
+
             sp['device_params'][sp['keyx']] = sp['varsx'][i]
             sp['device_params'][sp['keyy']] = sp['varsy'][j]
             sp['device_params']['id_string'] = '{}{}'.format(
@@ -903,16 +1090,20 @@ class RectangularSweep(SividdleDevice):
 
             new_device = sp['device_class'](sp['device_params'])
 
-            if j < num_iter_x - 1:
+            if i == 0 and sp['staggered']:
+                padding_y[i, j] = sp['staggerd_y_pitch'] * j
+
+            if j < num_iter_y - 1:
                 # One to the right, takes into account xsize.
                 current_xsize = device_dimensions[i, j, 0]
                 right_xsize = device_dimensions[i, j + 1, 0]
                 # Only adjust padding if equidistant_grid = True
+
                 padding_x[i, j + 1] = padding_x[i, j] + \
                     (current_xsize + right_xsize) * 0.5 * \
                     sp['equidistant_grid'] + sp['pitchx']
 
-            if i < num_iter_y - 1:
+            if i < num_iter_x - 1:
                 current_ysize = device_dimensions[i, j, 1]
                 top_ysize = device_dimensions[i + 1, j, 1]
                 # Only adjust padding if equidistant_grid = True
@@ -923,7 +1114,7 @@ class RectangularSweep(SividdleDevice):
             # Add grid labels.
             if sp['grid_label']:
 
-                if i == 0 or i == num_iter_y - 1:
+                if i == 0 or i == num_iter_x - 1:
                     sp['grid_label_params']['text'] = number_label[j]
                     if i == 0:
                         sp['grid_label_params']['orientation'] = 'b'
@@ -931,7 +1122,7 @@ class RectangularSweep(SividdleDevice):
                         sp['grid_label_params']['orientation'] = 't'
 
                     new_device.add_label(sp['grid_label_params'])
-                if j == 0 or j == num_iter_x - 1:
+                if j == 0 or j == num_iter_y - 1:
                     sp['grid_label_params']['text'] = letter_label[i]
                     if j == 0:
                         sp['grid_label_params']['orientation'] = 'l'
