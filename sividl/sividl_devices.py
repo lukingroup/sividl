@@ -409,6 +409,7 @@ class WaveGuide(SividdleDevice):
                 photonic_crystal_params['a_const'],
                 photonic_crystal_params['num_taper'],
                 photonic_crystal_params['num_cells'],
+                both=photonic_crystal_params['both'],
                 flip=True
             )
 
@@ -785,13 +786,15 @@ class AdiabaticTaperedEllipseArray(SividdleDevice):
         Number of tapered cells.
     num_cells: int
         Number of non-tapered cells.
-    flip: boolen
+    flip: boolean
         If True, flip array. Tapered section
         now is left.
+    both: boolean:
+        If True, add taper on both sides.
     """
 
     def __init__(self, layer, hx_init, hy_init,
-                 hy_final, a_const, num_taper, num_cells, flip):
+                 hy_final, a_const, num_taper, num_cells, flip, both):
 
         SividdleDevice.__init__(self, name='AdiabaticTaperedEllipseArray')
 
@@ -816,6 +819,11 @@ class AdiabaticTaperedEllipseArray(SividdleDevice):
         # Appending tapered and nontapered arrays
         hx_array = np.append(hx_array_init, hx_array_tapered)
         hy_array = np.append(hy_array_init, hy_array_tapered)
+
+        if both:
+            hx_array = np.append(np.flip(hx_array_tapered), hx_array)
+            hy_array = np.append(np.flip(hy_array_tapered), hy_array)
+            num_taper += num_taper
 
         if flip:
             hx_array = np.flip(hx_array)
