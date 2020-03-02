@@ -155,26 +155,124 @@ class CrossAligmentMark(SividdleDevice):
 
     Parameters
     ----------
-    positive (Boolean): Positive tone resist if true
-    layer: int
+    params: dict
+        Dictionary containing the following
+        configuration parameter.
+    params['layer']: int
         Layer of aligment mark.
-    d_small: int
+    params['invert']: Boolean
+        If true, invert pattern.
+    params['d_small']: int
         Width of small rectangle.
-    d_large:  int
+    params['d_large']:  int
         Width of large rectangle.
-    sep: int
+    params['sep']: int
         Gap between rectangles.
+    params['exposure_box']: Boolean
+        If True, add rectangle around alignment markers,
+        used for marker freeing in aligned writes.
+    params['exposure_box_dx']: float
+        Distance between edge of alignment mark and
+        edge of box.
+    params['exposure_box_layer']:
+        Layer of exposure box.
     """
 
-    def __init__(self, layer, d_small=1.75, d_large=1.975, sep=0.275):
+    def __init__(self, params):
         SividdleDevice.__init__(self, name='aligment_mark')
-        self << pg.rectangle(size=(d_large, d_large), layer=layer)
-        self << pg.rectangle(size=(d_small, d_small), layer=layer)\
-            .movex(d_large + sep)
-        self << pg.rectangle(size=(d_small, d_small), layer=layer)\
-            .movey(d_large + sep)
-        self << pg.rectangle(size=(d_large, d_large), layer=layer)\
-            .move([d_small + sep, d_small + sep])
+
+        interim_alignment_mark = SividdleDevice('interim_alignment_mark')
+
+        # Add four squares defining the alignment mark
+        interim_alignment_mark << pg.rectangle(
+            size=(
+                params['d_large'],
+                params['d_large']
+            ),
+            layer=params['layer']
+        )
+
+        interim_alignment_mark << pg.rectangle(
+            size=(
+                params['d_small'],
+                params['d_small']
+            ),
+            layer=params['layer']
+        ).movex(params['d_large'] + params['sep'])
+
+        interim_alignment_mark << pg.rectangle(
+            size=(
+                params['d_small'],
+                params['d_small']
+            ),
+            layer=params['layer']
+        ).movey(params['d_large'] + params['sep'])
+
+        interim_alignment_mark << pg.rectangle(
+            size=(
+                params['d_large'],
+                params['d_large']
+            ),
+            layer=params['layer']).move(
+                [
+                    params['d_small'] + params['sep'],
+                    params['d_small'] + params['sep']
+                ]
+        )
+
+        # Add interim device to self, invert if choosen.
+        if params['invert']:
+            self << interim_alignment_mark.invert(params['layer'])
+        else:
+            self << interim_alignment_mark
+
+        # Add bounding box
+
+        # Make exposure box.
+        if params['exposure_box']:
+            exposure_box_width = self.xsize \
+                + 2 * params['exposure_box_dx']
+            exposure_box = pg.rectangle(
+                size=(exposure_box_width, exposure_box_width),
+                layer=params['exposure_box_layer']
+            )
+            self << exposure_box.move(
+                (
+                    self.xsize * 0.5 - exposure_box.xsize * 0.5,
+                    self.ysize * 0.5 - exposure_box.ysize * 0.5,
+                )
+            )
+
+            # Center device
+            # Shift center of bounding box to origin
+            self.center = [0, 0]
+
+            # Add dot at alignment point
+            if params['make_dot']:
+                dot = pg.rectangle(
+                    size=(params['dot_size'], params['dot_size']),
+                    layer=params['dot_layer']
+                )
+                dot.move(
+                    (
+                        -params['dot_size'] * 0.5,
+                        - params['dot_size'] * 0.5
+                    )
+                )
+
+                self << dot
+
+    def record_dot_position(self, textlayer):
+        """Read center position and record it in layer."""
+        center = (self.x, self.y)
+        self.label(
+            text='Aignment mark center = ({:.2f}, {:.3f}) '.format(
+                center[0],
+                center[1]
+            ),
+            position=center,
+            layer=textlayer
+        )
 
 
 class WriteFieldCrossAligmentMark(SividdleDevice):
@@ -186,8 +284,6 @@ class WriteFieldCrossAligmentMark(SividdleDevice):
         Contains the writefield parameters:
     params['bounding_box_size']: float
         Dimension of write field.
-    params['positive']: boolean
-        If True, pattern for positive tone resist is created.
     params['bounding_box_layer']: int
         Layer of bounding box.
     params['alignment_layer']: int:
@@ -198,6 +294,9 @@ class WriteFieldCrossAligmentMark(SividdleDevice):
     params['alignment_offset_dy']: int
         Offset of alignment markers
         from edge of writefield in x-direction.
+    params['alignment_mark_params']:
+        Dictionary containing the parameters for the
+        alignment marker, see docstring of CrossAligmentMark.
     """
 
     def __init__(self, params):
@@ -211,43 +310,27 @@ class WriteFieldCrossAligmentMark(SividdleDevice):
 
         self << bounding_box
 
-        # make alignment marks
-        alignment_mark = CrossAligmentMark(params['alignment_layer'])
-
-        if params['positive']:
-            alignment_mark = alignment_mark.invert(params['alignment_layer'])
+        # Shift center of bounding box to origin
+        self.center = [0, 0]
 
         # Position alignment marks on writefield
         delta_x = params['alignment_offset_dx']
         delta_y = params['alignment_offset_dy']
 
-        self << pg.copy(alignment_mark).move(
-            (
-                bounding_box.xsize * 0.5 - delta_x,
-                bounding_box.ysize * 0.5 - delta_y
-            )
-        )
-        self << pg.copy(alignment_mark).move(
-            (
-                bounding_box.xsize * 0.5 - delta_x,
-                -(bounding_box.ysize * 0.5 - delta_y)
-            )
-        )
-        self << pg.copy(alignment_mark).move(
-            (
-                -(bounding_box.xsize * 0.5 - delta_x),
-                bounding_box.ysize * 0.5 - delta_y
-            )
-        )
-        self << pg.copy(alignment_mark).move(
-            (
-                -(bounding_box.xsize * 0.5 - delta_x),
-                -(bounding_box.ysize * 0.5 - delta_y)
-            )
-        )
+        for i in range(4):
 
-        # Shift center of bounding box to origin
-        self.center = [0, 0]
+            alignment_mark = CrossAligmentMark(
+                params['alignment_mark_params']).move(
+                (
+                    - delta_x * (i < 2) + delta_x * (i >= 2) ,
+                    - delta_y * (i in (0, 2)) + delta_x * (i in (1, 3))
+                )
+            )
+
+            if params['add_text_label']:
+                alignment_mark.record_dot_position(params['text_label_layer'])
+
+            self << alignment_mark
 
 
 class EtchSlap(SividdleDevice):

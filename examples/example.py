@@ -18,13 +18,35 @@ import sividl.sividl_devices as sivp  # noqa: E402
 
 def run_example():
     # Setup writefield.
+    # Alignment mark parameters
+    alignment_mark_params = {
+        'layer'               : 1,
+        'exposure_box'        : True,
+        'exposure_box_dx'     : 8,
+        'exposure_box_layer'  : 12,
+        'invert'              : True,
+        'd_small'             : 1.75,
+        'd_large'             : 1.975,
+        'sep'                 : 0.275,
+        'make_dot'            : True,
+        'dot_layer'           : 13,
+        'dot_size'            : 0.010
+    }
+
+    # Setup writefield.
     writefield_parameters = {
         'bounding_box_size'     : 500,
         'bounding_box_layer'    : 255,
         'positive'              : True,
         'alignment_layer'       : 1,
-        'alignment_offset_dx'   : 25,
-        'alignment_offset_dy'   : 25,
+        'alignment_offset_dx'   : 235,
+        'alignment_offset_dy'   : 235,
+        'exposure_box'          : True,
+        'exposure_box_dx'       : 8,
+        'exposure_box_layer'    : 12,
+        'add_text_label'        : True,
+        'text_label_layer'      : 260,
+        'alignment_mark_params' : alignment_mark_params
     }
 
     # Generate Writefield.
