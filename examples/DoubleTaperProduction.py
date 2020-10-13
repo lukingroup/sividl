@@ -100,9 +100,7 @@ def run_example():
     taperedSupport_params = {
         'layer'                 : 1,
         'name'                  : 'taperedSupport',
-        'straight_length_1'     : 1,
-        'straight_length_center': 1,
-        'straight_length_2'     : 1,
+        'straight_length_center': 0,
         'taper_length_1'        : 5,
         'taper_length_2'        : 5,
         'width_1'               : waveguide_width_scaled,
@@ -111,7 +109,6 @@ def run_example():
     }
 
     taperedSupport = sivp.Tapered_Support(taperedSupport_params)
-    taperedSupport.write_gds('taperedSupport.gds')
     write_field << taperedSupport
 
     # # Initial slab parameters.

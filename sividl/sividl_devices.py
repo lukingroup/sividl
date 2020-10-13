@@ -446,10 +446,10 @@ class Tapered_Support(SividdleDevice):
     """Device describing a tapered support section of a 
     waveguide, in the style of Mike and Bart. There are several
     segments in a tapered support. In addition to the straight 
-    sections before, after, and at the support, the tapering 
-    sections can be broken down into 2 parts. That is, there is
-    a concave section followed by a convex section as you go 
-    from waveguide width to support width.
+    section at the support, the tapering sections can be broken 
+    down into 2 parts. That is, there is a concave section 
+    followed by a convex section as you go from waveguide width
+    to support width.
 
     This device has two ports associated left and right ends
     of the tapered sections, named 'tpport1' and 'tpport2'.
@@ -458,16 +458,12 @@ class Tapered_Support(SividdleDevice):
     ----------
     layer: int
         Layer of waveguide
-    straight_length_1: float
-        straight length on the LHS of the tapered support
     taper_length_1: float
         tapered length on the LHS of the tapered support
     straight_length_center: float
         straight length at center of the tapered support
     taper_length_2: float
         tapered length on the RHS of the tapered support
-    straight_length_2: float
-        straight length on the RHS of the tapered support
     
     width_1: float
         waveguide width at LHS of the tapered support
@@ -487,69 +483,71 @@ class Tapered_Support(SividdleDevice):
         self.width_center = params['width_center']
         self.width_2 =  params['width_2']
 
-        straight_1_path = pp.straight(length = params['straight_length_1'])
         straight_center_path = pp.straight(length = params['straight_length_center'])
-        straight_2_path = pp.straight(length = params['straight_length_2'])
 
         taper_1_conc_path = pp.straight(length = params['taper_length_1']/2.0)
         taper_1_conv_path = pp.straight(length = params['taper_length_1']/2.0)
-        taper_2_path = pp.straight(length = params['taper_length_2'])
+        taper_2_conc_path = pp.straight(length = params['taper_length_2']/2.0)
+        taper_2_conv_path = pp.straight(length = params['taper_length_2']/2.0)
 
         # Create blank CrossSection objects to be used for each path
-        w1 = CrossSection()
         w_taper1_conc = CrossSection()
         w_taper1_conv = CrossSection()
         w_center = CrossSection()
-        w_taper2 = CrossSection()
-        w2 = CrossSection()
+        w_taper2_conc = CrossSection()
+        w_taper2_conv = CrossSection()
 
         # Add a single "section" to each of the cross-sections
-        w1.add(width = params['width_1'], offset = 0, layer = params['layer'],
-            ports = ('in1','out1'))
         w_taper1_conc.add(width = self.taperedWidth_1_conc, offset = 0, layer = params['layer'],
             ports = ('in_taper1_conc','out_taper1_conc'))
         w_taper1_conv.add(width = self.taperedWidth_1_conv, offset = 0, layer = params['layer'],
             ports = ('in_taper1_conv','out_taper1_conv'))
         w_center.add(width = params['width_center'], offset = 0, layer = params['layer'],
             ports = ('in_center','out_center'))
-        w2.add(width = params['width_2'], offset = 0, layer = params['layer'],
-            ports = ('in2','out2'))
+        w_taper2_conv.add(width = self.taperedWidth_2_conv, offset = 0, layer = params['layer'],
+            ports = ('in_taper2_conv','out_taper2_conv'))
+        w_taper2_conc.add(width = self.taperedWidth_2_conc, offset = 0, layer = params['layer'],
+            ports = ('in_taper2_conc','out_taper2_conc'))
+        
 
         # Combine the Path and the CrossSection
-        straight_1_dev = straight_1_path.extrude(cross_section = w1)
         taper_1_conc_dev = taper_1_conc_path.extrude(cross_section = w_taper1_conc)
         taper_1_conv_dev = taper_1_conv_path.extrude(cross_section = w_taper1_conv)
         straight_center_dev = straight_center_path.extrude(cross_section = w_center)
-        straight_2_dev = straight_2_path.extrude(cross_section = w2)
+        taper_2_conv_dev = taper_2_conv_path.extrude(cross_section = w_taper2_conv)
+        taper_2_conc_dev = taper_2_conc_path.extrude(cross_section = w_taper2_conc)
 
-        straight_1_ref = self.add_ref(straight_1_dev)
         taper_1_conc_ref = self.add_ref(taper_1_conc_dev)
         taper_1_conv_ref = self.add_ref(taper_1_conv_dev)
         straight_center_ref = self.add_ref(straight_center_dev)
-        straight_2_ref = self.add_ref(straight_2_dev)
+        taper_2_conc_ref = self.add_ref(taper_2_conc_dev)
+        taper_2_conv_ref = self.add_ref(taper_2_conv_dev)
 
-        taper_1_conc_ref.connect('in_taper1_conc',straight_1_ref.ports['out1'])
         taper_1_conv_ref.connect('in_taper1_conv',taper_1_conc_ref.ports['out_taper1_conc'])
         straight_center_ref.connect('in_center',taper_1_conv_ref.ports['out_taper1_conv'])
-
-        print(params)
+        taper_2_conv_ref.connect('in_taper2_conv',straight_center_ref.ports['out_center'])
+        taper_2_conc_ref.connect('in_taper2_conc',taper_2_conv_ref.ports['out_taper2_conv'])
+        
+        self.add_port(name='tpport1',port=taper_1_conc_ref.ports['in_taper1_conc'])
+        self.add_port(name='tpport2',port=taper_2_conc_ref.ports['out_taper2_conc'])
 
     def taperedWidth_1_conc(self, x):
         taperedSupportWidth1 = self.width_1 + 0.5*(self.width_center-self.width_1)*(x)**2
-        print(x,taperedSupportWidth1)
         return taperedSupportWidth1
 
     def taperedWidth_1_conv(self, x):
         taperedSupportWidth1 = self.width_center - 0.5*(self.width_center-self.width_1)*((x-1))**2
-        print(x,taperedSupportWidth1)
         return taperedSupportWidth1
 
-    def taperedSupportWidth_2(self, x):
-        taperedSupportWidth1 = self.width_1 + 0.5*(self.width_center-self.width_1)*(x/(0.5*self.taper_length_1))**2
-        print(x,taperedSupportWidth1)
-        return taperedSupportWidth1
+    def taperedWidth_2_conv(self, x):
+        taperedSupportWidth2 = self.width_center - 0.5*(self.width_center-self.width_2)*((x))**2
+        return taperedSupportWidth2
 
+    def taperedWidth_2_conc(self, x):
+        taperedSupportWidth2 = self.width_2 + 0.5*(self.width_center-self.width_2)*(x-1)**2
+        return taperedSupportWidth2
 
+    
 class WaveGuide(SividdleDevice):
     """Device describing a rectangular waveguide.
 
