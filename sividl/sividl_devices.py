@@ -23,7 +23,8 @@ import string
 import gdspy
 from matplotlib.font_manager import FontProperties
 import numpy as np
-from phidl import Device
+from phidl import Device, Path, CrossSection
+import phidl.path as pp
 import phidl.geometry as pg
 from sividl.sividl_utils import image_to_binary_bitmap, render_text
 
@@ -265,14 +266,15 @@ class CrossAligmentMark(SividdleDevice):
     def record_dot_position(self, textlayer):
         """Read center position and record it in layer."""
         center = (self.x, self.y)
-        self.label(
-            text='Aignment mark center = ({:.2f}, {:.3f}) '.format(
-                center[0],
-                center[1]
-            ),
-            position=center,
-            layer=textlayer
-        )
+        # self.label(
+        #     text='Aignment mark center = ({:.2f}, {:.3f}) '.format(
+        #         center[0],
+        #         center[1]
+        #     ),
+        #     position=center,
+        #     layer=textlayer
+        # )
+        # commented out b/c throwing error with new phidl 1.4.2
 
 
 class WriteFieldCrossAligmentMark(SividdleDevice):
@@ -397,7 +399,7 @@ class EtchSlap(SividdleDevice):
 class Taper(SividdleDevice):
     """Device describing a tapering section of a waveguide.
 
-    This device will hace two ports associated left and right ends
+    This device will have two ports associated left and right ends
     of the tapered sections, named 'tpport1' and 'tpport2'.
 
     Parameters
@@ -440,11 +442,118 @@ class Taper(SividdleDevice):
             orientation=0
         )
 
+class Tapered_Support(SividdleDevice):
+    """Device describing a tapered support section of a 
+    waveguide, in the style of Mike and Bart. There are several
+    segments in a tapered support. In addition to the straight 
+    sections before, after, and at the support, the tapering 
+    sections can be broken down into 2 parts. That is, there is
+    a concave section followed by a convex section as you go 
+    from waveguide width to support width.
+
+    This device has two ports associated left and right ends
+    of the tapered sections, named 'tpport1' and 'tpport2'.
+
+    Parameters
+    ----------
+    layer: int
+        Layer of waveguide
+    straight_length_1: float
+        straight length on the LHS of the tapered support
+    taper_length_1: float
+        tapered length on the LHS of the tapered support
+    straight_length_center: float
+        straight length at center of the tapered support
+    taper_length_2: float
+        tapered length on the RHS of the tapered support
+    straight_length_2: float
+        straight length on the RHS of the tapered support
+    
+    width_1: float
+        waveguide width at LHS of the tapered support
+    width_center: float
+        waveguide width at center of the tapered support
+    width_2: float
+        waveguide width at RHS of the tapered support
+    """
+
+    def __init__(self, params):
+
+        SividdleDevice.__init__(self, name=params['name'])
+        
+        self.taper_length_1 = params['taper_length_1']
+        self.taper_length_2 = params['taper_length_2']
+        self.width_1 =  params['width_1']
+        self.width_center = params['width_center']
+        self.width_2 =  params['width_2']
+
+        straight_1_path = pp.straight(length = params['straight_length_1'])
+        straight_center_path = pp.straight(length = params['straight_length_center'])
+        straight_2_path = pp.straight(length = params['straight_length_2'])
+
+        taper_1_conc_path = pp.straight(length = params['taper_length_1']/2.0)
+        taper_1_conv_path = pp.straight(length = params['taper_length_1']/2.0)
+        taper_2_path = pp.straight(length = params['taper_length_2'])
+
+        # Create blank CrossSection objects to be used for each path
+        w1 = CrossSection()
+        w_taper1_conc = CrossSection()
+        w_taper1_conv = CrossSection()
+        w_center = CrossSection()
+        w_taper2 = CrossSection()
+        w2 = CrossSection()
+
+        # Add a single "section" to each of the cross-sections
+        w1.add(width = params['width_1'], offset = 0, layer = params['layer'],
+            ports = ('in1','out1'))
+        w_taper1_conc.add(width = self.taperedWidth_1_conc, offset = 0, layer = params['layer'],
+            ports = ('in_taper1_conc','out_taper1_conc'))
+        w_taper1_conv.add(width = self.taperedWidth_1_conv, offset = 0, layer = params['layer'],
+            ports = ('in_taper1_conv','out_taper1_conv'))
+        w_center.add(width = params['width_center'], offset = 0, layer = params['layer'],
+            ports = ('in_center','out_center'))
+        w2.add(width = params['width_2'], offset = 0, layer = params['layer'],
+            ports = ('in2','out2'))
+
+        # Combine the Path and the CrossSection
+        straight_1_dev = straight_1_path.extrude(cross_section = w1)
+        taper_1_conc_dev = taper_1_conc_path.extrude(cross_section = w_taper1_conc)
+        taper_1_conv_dev = taper_1_conv_path.extrude(cross_section = w_taper1_conv)
+        straight_center_dev = straight_center_path.extrude(cross_section = w_center)
+        straight_2_dev = straight_2_path.extrude(cross_section = w2)
+
+        straight_1_ref = self.add_ref(straight_1_dev)
+        taper_1_conc_ref = self.add_ref(taper_1_conc_dev)
+        taper_1_conv_ref = self.add_ref(taper_1_conv_dev)
+        straight_center_ref = self.add_ref(straight_center_dev)
+        straight_2_ref = self.add_ref(straight_2_dev)
+
+        taper_1_conc_ref.connect('in_taper1_conc',straight_1_ref.ports['out1'])
+        taper_1_conv_ref.connect('in_taper1_conv',taper_1_conc_ref.ports['out_taper1_conc'])
+        straight_center_ref.connect('in_center',taper_1_conv_ref.ports['out_taper1_conv'])
+
+        print(params)
+
+    def taperedWidth_1_conc(self, x):
+        taperedSupportWidth1 = self.width_1 + 0.5*(self.width_center-self.width_1)*(x)**2
+        print(x,taperedSupportWidth1)
+        return taperedSupportWidth1
+
+    def taperedWidth_1_conv(self, x):
+        taperedSupportWidth1 = self.width_center - 0.5*(self.width_center-self.width_1)*((x-1))**2
+        print(x,taperedSupportWidth1)
+        return taperedSupportWidth1
+
+    def taperedSupportWidth_2(self, x):
+        taperedSupportWidth1 = self.width_1 + 0.5*(self.width_center-self.width_1)*(x/(0.5*self.taper_length_1))**2
+        print(x,taperedSupportWidth1)
+        return taperedSupportWidth1
+
 
 class WaveGuide(SividdleDevice):
     """Device describing a rectangular waveguide.
 
-    This device will hace two ports associated with the axis defined
+    This device will have two ports associated with the axis defined
     by the 'height' dimension, which are named ''wgport1' and 'wgport2'.
 
     Parameters
@@ -610,6 +719,29 @@ class WaveGuide(SividdleDevice):
                 name='extanchorport4'
             )
 
+class freeGeomAirholeDevice(SividdleDevice):
+     def __init__(self, params):
+
+        SividdleDevice.__init__(self, name='FreeGeom_Device')
+
+        self.params = params
+
+        # Generate waveguide.
+        waveguide = WaveGuide(
+            params['layer'],
+            params['len_wg'],
+            params['height_wg'],
+            params['photonic_crystal_params']
+        )
+
+        # Add anchors.
+        waveguide.add_anchors(
+            params["dx_anchor"],
+            params["width_anchor"],
+            params["widthmax_anchor"],
+            params["length_anchor"],
+            params['which_anchors']
+        )
 
 class TaperedWaveGuide(SividdleDevice):
     """Device describing tapered waveguide.
@@ -624,7 +756,7 @@ class TaperedWaveGuide(SividdleDevice):
         Height of waveguide section.
     params['len_tp_left']: float
         Lenght of left tapered section.
-    params['len_tp_rightt']: float
+    params['len_tp_right']: float
         Lenght of right tapered section.
     params['width_tp']: float
         Final width of tapered section.
@@ -728,12 +860,13 @@ class TaperedWaveGuide(SividdleDevice):
                 ]
             )
 
-        if params['add_taper_marker']:
-            self.add_arrow_markers()
-            # Compensate for the arrows in assignment of center.
-            self.center = [0, -params['width_tp'] * 0.5]
-        else:
-            self.center = [0, 0]
+        # The below doesn't work unless you have defined this parameter, which one does not generically do.
+        # if params['add_taper_marker']:
+        #     self.add_arrow_markers()
+        #     # Compensate for the arrows in assignment of center.
+        #     self.center = [0, -params['width_tp'] * 0.5]
+        # else:
+        #     self.center = [0, 0]
 
     def add_arrow_markers(self):
         """Add arrow markers.
