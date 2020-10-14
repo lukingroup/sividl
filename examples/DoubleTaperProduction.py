@@ -108,8 +108,39 @@ def run_example():
         'width_2'               : waveguide_width_scaled
     }
 
-    taperedSupport = sivp.Tapered_Support(taperedSupport_params)
-    write_field << taperedSupport
+    taperedSupport = sivp.TaperedSupport(taperedSupport_params)
+    # write_field << taperedSupport
+
+    DT_params = {
+        'cavity_length'         : 15,
+        'layer_wg'              : 1,
+        'name'                  : "DT",
+        'tapered_coupler_length': 17.5,
+        'tapered_support_length': 10,
+        'tapered_coupler_minWidth':0.11,
+        'tapered_support_width' : 1.4*waveguide_width_scaled,
+        'waveguide_spacer_length': 6,
+        'width'               : waveguide_width_scaled
+    }
+
+    doubleTaperDevice = sivp.DoubleTaperedDevice(DT_params)
+    num_cols = 6
+    num_rows = 21
+    wf_width = writefield_parameters['bounding_box_size']
+    deviceLength = 2*DT_params['tapered_coupler_length']+\
+                    4*DT_params['tapered_support_length']+\
+                        4*DT_params['waveguide_spacer_length']+\
+                            DT_params['cavity_length']
+    print(deviceLength)
+    margin_large = deviceLength+30.0
+    margin_small = 30.0
+    offset = 3.0
+    for i,x in enumerate(np.linspace(-wf_width/2+margin_small,wf_width/2-margin_large,num_cols)):
+        for y in np.linspace(wf_width/2-margin_small-offset*i,-wf_width/2+margin_small+offset*(num_cols-i),num_rows):
+            dev_ref = write_field.add_ref(doubleTaperDevice)
+            dev_ref.move([x,y])
+    
+    # write_field<<doubleTaperDevice
 
     # # Initial slab parameters.
     # slab_parameters = {

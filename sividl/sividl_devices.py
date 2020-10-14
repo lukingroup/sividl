@@ -334,6 +334,124 @@ class WriteFieldCrossAligmentMark(SividdleDevice):
 
             self << alignment_mark
 
+class DoubleTaperedDevice(SividdleDevice):
+    """A device comprised of waveguide tapers on both sides,
+    two quadratic tapered supports on either side of the cavity,
+    and a photonic crystal cavity (PCC) of "free geometry". That is,
+    the PCC is defined by the following parameters and is allowed
+    to be asymmetric both in hole dimensions and hole spacing.
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing the following parameters:
+
+    params['cavity_length']: float
+        length of the cavity region
+    params['layer_wg']: int
+        Layer of waveguide
+    params['name']: string
+        Name of GDS cell.
+    params['tapered_coupler_length']: float
+        length of the tapers on either side of the device
+    params['tapered_coupler_minWidth']: float
+        minimum width of the tapers on either side of the device
+    params['tapered_support_length']: float
+        length of the taperedSupports
+    params['tapered_support_width']: float
+        tapered support width. Typically, this is 1.4*width
+    params['waveguide_spacer_length']: float
+        length of the spacers that separate the tapered coupler
+        from the tapered support and that space out the two 
+        tapered supports on either side.
+    params['width']: float
+        cavity and waveguide width
+
+    params['PCC_Params']: Dictionary containing the following parameters:
+        PCC_Params[]..... Well we'll see
+
+
+    """
+
+
+    def __init__(self, params):
+
+        SividdleDevice.__init__(self, name=params['name'])
+        
+        self.layer_wg = params['layer_wg']
+        self.tapered_coupler_length = params['tapered_coupler_length']
+        self.waveguide_spacer_length = params['waveguide_spacer_length']
+        self.cavity_length = params['cavity_length']
+        self.tapered_support_length = params['tapered_support_length']
+        self.tapered_coupler_minWidth = params['tapered_coupler_minWidth']
+        self.width = params['width']
+        self.tapered_support_width = params['tapered_support_width']
+
+        self.tapered_support_params = {
+            'name'           : "taperedSupport",
+            'layer'          : self.layer_wg,
+            'taper_length_1' : self.tapered_support_length/2,
+            'straight_length_center': 0,
+            'taper_length_2' : self.tapered_support_length/2,
+            'width_1'        : self.width,
+            'width_center'   : self.tapered_support_width,
+            'width_2'        : self.width
+        }
+
+        # Create paths to define segments of device
+        spacer_path = pp.straight(length = self.waveguide_spacer_length)
+        cavity_path = pp.straight(length = self.cavity_length)
+
+        # Create blank CrossSection objects to be used for each path
+        spacer_xs = CrossSection()
+        cavity_xs = CrossSection()
+
+        # Add a section to each CrossSection to define the width for extrusion
+        spacer_xs.add(width = self.width, offset = 0, layer = self.layer_wg,
+            ports = ('in_spacer','out_spacer'))
+        cavity_xs.add(width = self.width, offset = 0, layer = self.layer_wg,
+            ports = ('in_cavity','out_cavity'))
+        
+        # Combine the Paths and the CrossSections to make Devices
+        spacer_dev = spacer_path.extrude(cross_section = spacer_xs)
+        cavity_dev = cavity_path.extrude(cross_section = cavity_xs)
+
+        # Create TaperedSupport Device
+        taperedSupport = TaperedSupport(self.tapered_support_params)
+
+        # Create Taper Device for tapered couplers
+        taperedCoupler = Taper(layer = self.layer_wg,name = "TaperedCoupler",
+                length = self.tapered_coupler_length,
+                dy_min = self.tapered_coupler_minWidth, dy_max=self.width)
+
+        # Create Device_References of the Devices
+        spacer1_ref = self.add_ref(spacer_dev)
+        spacer2_ref = self.add_ref(spacer_dev)
+        spacer3_ref = self.add_ref(spacer_dev)
+        spacer4_ref = self.add_ref(spacer_dev)
+        cavity_ref = self.add_ref(cavity_dev)
+        taperedSupport1_ref = self.add_ref(taperedSupport)
+        taperedSupport2_ref = self.add_ref(taperedSupport)
+        taperedSupport3_ref = self.add_ref(taperedSupport)
+        taperedSupport4_ref = self.add_ref(taperedSupport)
+        taperedCoupler1_ref = self.add_ref(taperedCoupler)
+        taperedCoupler2_ref = self.add_ref(taperedCoupler)
+
+        # Connect up the references to build the geometry
+        spacer1_ref.connect('in_spacer',taperedCoupler1_ref.ports['tpport2'])
+        taperedSupport1_ref.connect('tpport1',spacer1_ref.ports['out_spacer'])
+        spacer2_ref.connect('in_spacer',taperedSupport1_ref.ports['tpport2'])
+        taperedSupport2_ref.connect('tpport1',spacer2_ref.ports['out_spacer'])
+        cavity_ref.connect('in_cavity',taperedSupport2_ref.ports['tpport2'])
+        taperedSupport3_ref.connect('tpport1',cavity_ref.ports['out_cavity'])
+        spacer3_ref.connect('in_spacer',taperedSupport3_ref.ports['tpport2'])
+        taperedSupport4_ref.connect('tpport1',spacer3_ref.ports['out_spacer'])
+        spacer4_ref.connect('in_spacer',taperedSupport4_ref.ports['tpport2'])
+        taperedCoupler2_ref.connect('tpport2',spacer4_ref.ports['out_spacer'])
+
+        
+
+
 
 class EtchSlap(SividdleDevice):
     """Generate two etching strip for isotropic etching tests.
@@ -442,7 +560,7 @@ class Taper(SividdleDevice):
             orientation=0
         )
 
-class Tapered_Support(SividdleDevice):
+class TaperedSupport(SividdleDevice):
     """Device describing a tapered support section of a 
     waveguide, in the style of Mike and Bart. There are several
     segments in a tapered support. In addition to the straight 
@@ -452,24 +570,25 @@ class Tapered_Support(SividdleDevice):
     to support width.
 
     This device has two ports associated left and right ends
-    of the tapered sections, named 'tpport1' and 'tpport2'.
-
+ 
     Parameters
     ----------
-    layer: int
+    params: dict
+        Dictionary containing the following parameters:
+    params['layer']: int
         Layer of waveguide
-    taper_length_1: float
+    params['taper_length_1']: float
         tapered length on the LHS of the tapered support
-    straight_length_center: float
+    params['straight_length_center']: float
         straight length at center of the tapered support
-    taper_length_2: float
+    params['taper_length_2']: float
         tapered length on the RHS of the tapered support
     
-    width_1: float
+    params['width_1']: float
         waveguide width at LHS of the tapered support
-    width_center: float
+    params['width_center']: float
         waveguide width at center of the tapered support
-    width_2: float
+    params['width_2']: float
         waveguide width at RHS of the tapered support
     """
 
@@ -930,6 +1049,54 @@ class TaperedWaveGuide(SividdleDevice):
                   + 0.15 * init_ysize + 5)
             ]
         )
+
+class OvercoupledPCC_v0p4p2(SividdleDevice):
+    """Airholes for V0p4p2 Devices
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing the parameters of the photonic crystal cavity
+    params['layer']: int
+        Target layer for photonic crystal cavity holes
+    params['aL']: float
+        Lattice constant for the left hand side mirror
+    params['aR']: float
+        Lattice constant for the right hand side mirror
+    params['hhL']: float
+        Hole height for the left hand side mirror. That is,
+        the hole diameter along the waveguide long axis.
+    params['hwL']: float
+        Hole width for the left hand side mirror. That is,
+        the hole diameter orthogonal to the waveguide long axis.
+    params['hhR']: float
+        Hole height for the right hand side mirror. That is,
+        the hole diameter along the waveguide long axis.
+    params['hwR']: float
+        Hole width for the right hand side mirror. That is,
+        the hole diameter orthogonal to the waveguide long axis.
+    params['nholesLMirror']: int
+        Number of holes in the bragg mirror zone on the LHS
+    params['nholesRMirror']: int
+        Number of holes in the bragg mirror zone on the RHS
+    params['nholes_wvg-mirr_trans_L]: int
+        Number of holes transitioning from mirror dimensions
+        to unperforated waveguide on the LHS.
+    params['nholes_wvg-mirr_trans_R]: int
+        Number of holes transitioning from mirror dimensions
+        to unperforated waveguide on the RHS.
+    params['nholes_defect']: int
+        Total number of holes in the defect region.
+    """
+
+    def __init__(self, params):
+
+            SividdleDevice.__init__(self, name='PCC')
+
+            self.params = params
+    
+    def computeGeometry(self):
+        return Null
 
 
 class EllipseArray(SividdleDevice):
