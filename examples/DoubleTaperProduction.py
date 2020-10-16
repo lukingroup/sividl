@@ -52,64 +52,36 @@ def run_example():
     # Generate Writefield.
     write_field = sivp.WriteFieldCrossAligmentMark(writefield_parameters)
 
-    # photonic crystal parameters
-    pc_params = {
-        'holes_layer'           : 2,
-        'hx_init'               : 0.1,
-        'hy_init'               : 0.1,
-        'hy_final'              : 0.05,
-        'a_const'               : 0.3,
-        'num_taper'             : 5,
-        'num_cells'             : 34,
-        'both'                  : True,
-        'dx_holes'              : 1
-    }
-    waveguide = sivp.WaveGuide(1,100,0.4,pc_params)
-
-    # write_field << waveguide
-
-    rightTaper = sivp.Taper(1,"rightTaper",30,12,400)
-
-
-
-    # write_field << rightTaper
-
-    taperedWaveGuide_params = {
-        'layer'                 : 55,
-        'len_wg'                : 0,
-        'height_wg'             : 0.4,
-        'len_tp_left'           : 30,
-        'len_tp_right'          : 60,
-        'width_tp'              : 0.45,
-        'which_anchors'         : [3],
-        'dx_anchor'             : 10,
-        'width_anchor'          : 0.3,
-        'widthmax_anchor'       : 0.1,
-        'length_anchor'         : 1,
-        'invert'                : False,
-        'photonic_crystal_params': pc_params
-    }
-
-    taperedWaveguide = sivp.TaperedWaveGuide(taperedWaveGuide_params)
-    # write_field << taperedWaveguide
-
     waveguide_width = 0.493
     #scale the design width for fab
     waveguide_width_scaled = 1.1*waveguide_width
+    
+    nominalResonance = 0.7377
+    targetResonance = 0.737
+    scaling = targetResonance/nominalResonance
 
-    taperedSupport_params = {
-        'layer'                 : 1,
-        'name'                  : 'taperedSupport',
-        'straight_length_center': 0,
-        'taper_length_1'        : 5,
-        'taper_length_2'        : 5,
-        'width_1'               : waveguide_width_scaled,
-        'width_center'          : 1.4*waveguide_width_scaled,
-        'width_2'               : waveguide_width_scaled
+    PCC_params = {
+        'layer'               : 2,
+        'aL'                  : 0.2717*scaling,
+        'aR'                  : 0.2502*scaling,
+        'hxL'                 : 0.1135849*scaling,
+        'hyL'                 : 0.1605274*scaling,
+        'hxR'                 : 0.1135849*scaling,
+        'hyR'                 : 0.1605274*scaling,
+        'maxDef'              : 0.1392,
+        'nholesLMirror'       : 7,
+        'nholesRMirror'       : 3,
+        'nholes_wvg-mirr_trans_L': 5,
+        'nholes_wvg-mirr_trans_R': 5,
+        'nholes_defect'       : 5,
+        'min_hole_dim'        : 0.05,
+        'effective_index'     : 1.6,
+        'resonance_wavelength': 0.737
     }
 
-    taperedSupport = sivp.TaperedSupport(taperedSupport_params)
-    # write_field << taperedSupport
+    doubleTaperDevice_holes = sivp.OvercoupledPCC_v0p4p2(PCC_params)
+    # write_field << doubleTaperDevice_holes
+
 
     DT_params = {
         'cavity_length'         : 15,
@@ -124,22 +96,33 @@ def run_example():
     }
 
     doubleTaperDevice = sivp.DoubleTaperedDevice(DT_params)
-    num_cols = 6
-    num_rows = 21
+    # write_field << doubleTaperDevice
+
+    num_cols = 5
+    num_rows = 20
     wf_width = writefield_parameters['bounding_box_size']
     deviceLength = 2*DT_params['tapered_coupler_length']+\
                     4*DT_params['tapered_support_length']+\
                         4*DT_params['waveguide_spacer_length']+\
                             DT_params['cavity_length']
     print(deviceLength)
-    margin_large = deviceLength+30.0
+    margin_large = deviceLength/2+30.0
     margin_small = 30.0
-    offset = 3.0
-    for i,x in enumerate(np.linspace(-wf_width/2+margin_small,wf_width/2-margin_large,num_cols)):
-        for y in np.linspace(wf_width/2-margin_small-offset*i,-wf_width/2+margin_small+offset*(num_cols-i),num_rows):
-            dev_ref = write_field.add_ref(doubleTaperDevice)
-            dev_ref.move([x,y])
+    offset = 6.0
+    for i,x in enumerate(np.linspace(-wf_width/2+margin_large,wf_width/2-margin_large,num_cols)):
+        # x += (i>num_cols/2)*margin_small
+        if(i==int(num_cols/2)):
+            pass
+        else:
+            for y in np.linspace(wf_width/2-margin_small-offset*i,-wf_width/2+margin_small+offset*(num_cols-i),num_rows):
+                dev_ref = write_field.add_ref(doubleTaperDevice)
+                pcc_ref = write_field.add_ref(doubleTaperDevice_holes)
+                dev_ref.move([x,y])
+                pcc_ref.move([x,y])
+
+
     
+
     # write_field<<doubleTaperDevice
 
     # # Initial slab parameters.

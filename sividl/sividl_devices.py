@@ -448,7 +448,8 @@ class DoubleTaperedDevice(SividdleDevice):
         taperedSupport4_ref.connect('tpport1',spacer3_ref.ports['out_spacer'])
         spacer4_ref.connect('in_spacer',taperedSupport4_ref.ports['tpport2'])
         taperedCoupler2_ref.connect('tpport2',spacer4_ref.ports['out_spacer'])
-
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
         
 
 
@@ -1063,40 +1064,165 @@ class OvercoupledPCC_v0p4p2(SividdleDevice):
         Lattice constant for the left hand side mirror
     params['aR']: float
         Lattice constant for the right hand side mirror
-    params['hhL']: float
-        Hole height for the left hand side mirror. That is,
-        the hole diameter along the waveguide long axis.
-    params['hwL']: float
-        Hole width for the left hand side mirror. That is,
-        the hole diameter orthogonal to the waveguide long axis.
-    params['hhR']: float
-        Hole height for the right hand side mirror. That is,
-        the hole diameter along the waveguide long axis.
-    params['hwR']: float
-        Hole width for the right hand side mirror. That is,
-        the hole diameter orthogonal to the waveguide long axis.
+    params['hxL']: float
+        Hole dimension along the waveguide long axis
+        for the left hand side mirror.
+    params['hyL']: float
+        Hole dimension orthogonal to the waveguide long axis
+        for the left hand side mirror.
+    params['hxR']: float
+        Hole dimension along the waveguide long axis
+        for the right hand side mirror.
+    params['hyR']: float
+        Hole dimension orthogonal to the waveguide long axis
+        for the right hand side mirror.
+    params['maxDef']: float
+        cavity defect parameter
     params['nholesLMirror']: int
         Number of holes in the bragg mirror zone on the LHS
     params['nholesRMirror']: int
         Number of holes in the bragg mirror zone on the RHS
-    params['nholes_wvg-mirr_trans_L]: int
+    params['nholes_wvg-mirr_trans_L']: int
         Number of holes transitioning from mirror dimensions
         to unperforated waveguide on the LHS.
-    params['nholes_wvg-mirr_trans_R]: int
+    params['nholes_wvg-mirr_trans_R']: int
         Number of holes transitioning from mirror dimensions
         to unperforated waveguide on the RHS.
     params['nholes_defect']: int
-        Total number of holes in the defect region.
+        Number of holes in each half of the defect region.
+        That is, the total number of holes in the cavity zone
+        will be nholes_defect*2.
+    params['min_hole_dim']: float
+        minimum fabable hole dimension
+    params['effective_index']: float
+        Effective refractive index of the waveguide as determined
+        by a mode source in lumerical. This is used to calculate
+        the standing wave "lattice constant" that the mirror-to-
+        waveguide lattice constant transitions to.
+    params['resonance_wavelength']: float
+        resonance wavelength of the cavity in um. This is used to calculate
+        the standing wave "lattice constant" that the mirror-to-
+        waveguide lattice constant transitions to.
     """
 
     def __init__(self, params):
 
-            SividdleDevice.__init__(self, name='PCC')
+        SividdleDevice.__init__(self, name='PCC')
+        # Breakout params to help code read cleaner
+        self.hxL = params['hxL']
+        self.hyL = params['hyL']
+        self.hxR = params['hxR']
+        self.hyR = params['hyR']
+        self.nholesLMirror = params['nholesLMirror']
+        self.nholes_wvgmirr_trans_L = params['nholes_wvg-mirr_trans_L']
+        self.nholes_wvgmirr_trans_R = params['nholes_wvg-mirr_trans_R']
+        self.nholesRMirror = params['nholesRMirror']
+        self.min_hole_dim = params['min_hole_dim']
 
-            self.params = params
+        self.aL = params['aL']
+        self.aR = params['aR']
+
+        self.nholes_defect = params['nholes_defect']
+        self.maxDef = params['maxDef']
+
+        self.neff = params['effective_index']
+        self.res_wavelen = params['resonance_wavelength']
+
+        self.layer = params['layer']
+
+
+        self.params = params
+
+        self.all_hx,self.all_hy,self.all_a = self.computeGeometry()
+        print(self.all_hx,self.all_hy,self.all_a)
+        print(self.all_hx.shape,self.all_hy.shape,self.all_a.shape)
+        self << EllipseArray(self.layer, self.all_hx, self.all_hy, self.all_a)
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
     
     def computeGeometry(self):
-        return Null
+        # waveguide-mirror hole size transition from smallest fab-able to mirror hole size
+        # while maintaining ellipse aspect ratio.
+        leftestHole_hx = ((self.hxL/self.hyL)*(self.hxL>self.hyL) + (self.hxL<=self.hyL))*self.min_hole_dim
+        LHS_wvg_mirror_hx = np.linspace(leftestHole_hx,self.hxL,self.params['nholes_wvg-mirr_trans_L'])
+        leftestHole_hy = ((self.hyL/self.hxL)*(self.hxL<self.hyL) + (self.hxL>=self.hyL))*self.min_hole_dim
+        LHS_wvg_mirror_hy = np.linspace(leftestHole_hy,self.hyL,self.params['nholes_wvg-mirr_trans_L'])
+
+        # LHS Photonic crystal mirror holes
+        LHS_mirror_hx = self.hxL*np.ones(self.nholesLMirror)
+        LHS_mirror_hy = self.hyL*np.ones(self.nholesLMirror)
+        
+        # defect holes
+        # In general, the mirror hole dimensions may be different on each side, and hole dims have even been varied
+        # as a cavity defect. However, it is practically difficult to fabricate holes of varying sizes. 
+        # This is a constant hole size design, so no transition between hole sizes is necessary
+        LHS_cavity_hx = np.ones(self.nholes_defect)*self.hxL
+        LHS_cavity_hy = np.ones(self.nholes_defect)*self.hyL
+        RHS_cavity_hx = np.ones(self.nholes_defect)*self.hxR
+        RHS_cavity_hy = np.ones(self.nholes_defect)*self.hyR
+
+        RHS_mirror_hx = self.hxR*np.ones(self.nholesRMirror)
+        RHS_mirror_hy = self.hyR*np.ones(self.nholesRMirror)
+
+        # waveguide-mirror hole size transition from mirror hole size to smallest fab-able dimension
+        # while maintaining ellipse aspect ratio.
+        rightestHole_hx = ((self.hxR/self.hyR)*(self.hxR>self.hyR) + (self.hxR<=self.hyR))*self.min_hole_dim
+        RHS_wvg_mirror_hx = np.linspace(self.hxR,rightestHole_hx,self.params['nholes_wvg-mirr_trans_R'])
+        rightestHole_hy = ((self.hyR/self.hxR)*(self.hxR<self.hyR) + (self.hxR>=self.hyR))*self.min_hole_dim
+        RHS_wvg_mirror_hy = np.linspace(self.hyR,rightestHole_hy,self.params['nholes_wvg-mirr_trans_R'])
+
+        # append all holes together
+        all_hx = np.append(LHS_wvg_mirror_hx,np.append(LHS_mirror_hx,LHS_cavity_hx))
+        all_hx = np.append(all_hx,np.append(RHS_cavity_hx,np.append(RHS_mirror_hx,RHS_wvg_mirror_hx)))
+
+        all_hy = np.append(LHS_wvg_mirror_hy,np.append(LHS_mirror_hy,LHS_cavity_hy))
+        all_hy = np.append(all_hy,np.append(RHS_cavity_hy,np.append(RHS_mirror_hy,RHS_wvg_mirror_hy)))
+
+        # lattice constant calculations
+
+        # standing wave lattice constant based on effective index and resonance wavelength
+        standingWave_a = 0.5*self.res_wavelen/self.neff
+        leftest_a = standingWave_a
+        # linearly transition the lattice constant from the waveguide's standing wave
+        # spacing to the mirror spacing. The cartoon heuristic is that this should help
+        # keep the field mostly in the dielectric, and minimize scattering from surfaces.
+        LHS_wvg_mirror_a = np.linspace(leftest_a,self.aL,self.nholes_wvgmirr_trans_L+1)
+
+        # LHS Photonic crystal mirror holes
+        LHS_mirror_a = self.aL*np.ones(self.nholesLMirror-1)
+
+        # defect holes
+        # linearly transition the lattice constant from aL to aR
+        aTransSlope = (self.aL-self.aR)/(2*self.nholes_defect - 1)
+        LHS_cavity_a = np.linspace(1,self.nholes_defect,self.nholes_defect)
+        #
+        aLTrans = self.aL+(LHS_cavity_a-self.nholes_defect)*aTransSlope
+        LHS_cavity_a[0] = aLTrans[0]*(1-self.maxDef)
+        LHS_cavity_a[1:] = aLTrans[1:]*(1-self.maxDef*(2*((LHS_cavity_a[1:]-1)/self.nholes_defect)**3 - 3*((LHS_cavity_a[1:]-1)/self.nholes_defect)**2+1))
+        LHS_cavity_a = LHS_cavity_a[::-1] 
+        # blindly copying the form of the defect from the matlab codebase
+        
+        RHS_cavity_a = np.linspace(1,self.nholes_defect,self.nholes_defect)
+        # This is almost certainly wrong
+        aRTrans = self.aR-(RHS_cavity_a-self.nholes_defect)*aTransSlope
+        RHS_cavity_a[0] = aRTrans[0]*(1-self.maxDef)
+        RHS_cavity_a[1:] = aRTrans[1:]*(1-self.maxDef*(2*((RHS_cavity_a[1:]-1)/self.nholes_defect)**3 - 3*((RHS_cavity_a[1:]-1)/self.nholes_defect)**2+1))
+        # Turns out the simulated cavity actually didn't use this smallest
+        # 'a' at RHS_cavity_a[0]. So we remove it here.
+        RHS_cavity_a = RHS_cavity_a[1:]
+
+        # RHS Photonic crystal mirror holes
+        RHS_mirror_a = self.aR*np.ones(self.nholesRMirror-1)
+
+        # RHS mirror-to-waveguide transition
+        rightest_a = standingWave_a
+        RHS_wvg_mirror_a = np.linspace(self.aR,rightest_a,self.nholes_wvgmirr_trans_R+1)
+
+        # append all holes together
+        all_a = np.append(LHS_wvg_mirror_a,np.append(LHS_mirror_a,LHS_cavity_a))
+        all_a = np.append(all_a,np.append(RHS_cavity_a,np.append(RHS_mirror_a,RHS_wvg_mirror_a)))
+
+        return all_hx,all_hy,all_a
 
 
 class EllipseArray(SividdleDevice):
@@ -1123,8 +1249,9 @@ class EllipseArray(SividdleDevice):
         assert len(hy_array) is len(hx_array), \
             "Please provide arrays of equal length"
 
-        assert len(a_consts_array) is len(hx_array) - 1, \
-            "Please provide arrays of equal length"
+        assert len(a_consts_array) is (len(hx_array)-1), \
+            "Please provide a lattice constant array with one fewer"+\
+                " element than the hole arrays."
 
         SividdleDevice.__init__(self, name='EllipseArray')
 
