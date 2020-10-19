@@ -334,126 +334,6 @@ class WriteFieldCrossAligmentMark(SividdleDevice):
 
             self << alignment_mark
 
-class DoubleTaperedDevice(SividdleDevice):
-    """A device comprised of waveguide tapers on both sides,
-    two quadratic tapered supports on either side of the cavity,
-    and a photonic crystal cavity (PCC) of "free geometry". That is,
-    the PCC is defined by the following parameters and is allowed
-    to be asymmetric both in hole dimensions and hole spacing.
-
-    Parameters
-    ----------
-    params: dict
-        Dictionary containing the following parameters:
-
-    params['cavity_length']: float
-        length of the cavity region
-    params['layer_wg']: int
-        Layer of waveguide
-    params['name']: string
-        Name of GDS cell.
-    params['tapered_coupler_length']: float
-        length of the tapers on either side of the device
-    params['tapered_coupler_minWidth']: float
-        minimum width of the tapers on either side of the device
-    params['tapered_support_length']: float
-        length of the taperedSupports
-    params['tapered_support_width']: float
-        tapered support width. Typically, this is 1.4*width
-    params['waveguide_spacer_length']: float
-        length of the spacers that separate the tapered coupler
-        from the tapered support and that space out the two 
-        tapered supports on either side.
-    params['width']: float
-        cavity and waveguide width
-
-    params['PCC_Params']: Dictionary containing the following parameters:
-        PCC_Params[]..... Well we'll see
-
-
-    """
-
-
-    def __init__(self, params):
-
-        SividdleDevice.__init__(self, name=params['name'])
-        
-        self.layer_wg = params['layer_wg']
-        self.tapered_coupler_length = params['tapered_coupler_length']
-        self.waveguide_spacer_length = params['waveguide_spacer_length']
-        self.cavity_length = params['cavity_length']
-        self.tapered_support_length = params['tapered_support_length']
-        self.tapered_coupler_minWidth = params['tapered_coupler_minWidth']
-        self.width = params['width']
-        self.tapered_support_width = params['tapered_support_width']
-
-        self.tapered_support_params = {
-            'name'           : "taperedSupport",
-            'layer'          : self.layer_wg,
-            'taper_length_1' : self.tapered_support_length/2,
-            'straight_length_center': 0,
-            'taper_length_2' : self.tapered_support_length/2,
-            'width_1'        : self.width,
-            'width_center'   : self.tapered_support_width,
-            'width_2'        : self.width
-        }
-
-        # Create paths to define segments of device
-        spacer_path = pp.straight(length = self.waveguide_spacer_length)
-        cavity_path = pp.straight(length = self.cavity_length)
-
-        # Create blank CrossSection objects to be used for each path
-        spacer_xs = CrossSection()
-        cavity_xs = CrossSection()
-
-        # Add a section to each CrossSection to define the width for extrusion
-        spacer_xs.add(width = self.width, offset = 0, layer = self.layer_wg,
-            ports = ('in_spacer','out_spacer'))
-        cavity_xs.add(width = self.width, offset = 0, layer = self.layer_wg,
-            ports = ('in_cavity','out_cavity'))
-        
-        # Combine the Paths and the CrossSections to make Devices
-        spacer_dev = spacer_path.extrude(cross_section = spacer_xs)
-        cavity_dev = cavity_path.extrude(cross_section = cavity_xs)
-
-        # Create TaperedSupport Device
-        taperedSupport = TaperedSupport(self.tapered_support_params)
-
-        # Create Taper Device for tapered couplers
-        taperedCoupler = Taper(layer = self.layer_wg,name = "TaperedCoupler",
-                length = self.tapered_coupler_length,
-                dy_min = self.tapered_coupler_minWidth, dy_max=self.width)
-
-        # Create Device_References of the Devices
-        spacer1_ref = self.add_ref(spacer_dev)
-        spacer2_ref = self.add_ref(spacer_dev)
-        spacer3_ref = self.add_ref(spacer_dev)
-        spacer4_ref = self.add_ref(spacer_dev)
-        cavity_ref = self.add_ref(cavity_dev)
-        taperedSupport1_ref = self.add_ref(taperedSupport)
-        taperedSupport2_ref = self.add_ref(taperedSupport)
-        taperedSupport3_ref = self.add_ref(taperedSupport)
-        taperedSupport4_ref = self.add_ref(taperedSupport)
-        taperedCoupler1_ref = self.add_ref(taperedCoupler)
-        taperedCoupler2_ref = self.add_ref(taperedCoupler)
-
-        # Connect up the references to build the geometry
-        spacer1_ref.connect('in_spacer',taperedCoupler1_ref.ports['tpport2'])
-        taperedSupport1_ref.connect('tpport1',spacer1_ref.ports['out_spacer'])
-        spacer2_ref.connect('in_spacer',taperedSupport1_ref.ports['tpport2'])
-        taperedSupport2_ref.connect('tpport1',spacer2_ref.ports['out_spacer'])
-        cavity_ref.connect('in_cavity',taperedSupport2_ref.ports['tpport2'])
-        taperedSupport3_ref.connect('tpport1',cavity_ref.ports['out_cavity'])
-        spacer3_ref.connect('in_spacer',taperedSupport3_ref.ports['tpport2'])
-        taperedSupport4_ref.connect('tpport1',spacer3_ref.ports['out_spacer'])
-        spacer4_ref.connect('in_spacer',taperedSupport4_ref.ports['tpport2'])
-        taperedCoupler2_ref.connect('tpport2',spacer4_ref.ports['out_spacer'])
-        # Shift center of bounding box to origin.
-        self.center = [0, 0]
-        
-
-
-
 class EtchSlap(SividdleDevice):
     """Generate two etching strip for isotropic etching tests.
 
@@ -837,29 +717,6 @@ class WaveGuide(SividdleDevice):
                 name='extanchorport4'
             )
 
-class freeGeomAirholeDevice(SividdleDevice):
-     def __init__(self, params):
-
-        SividdleDevice.__init__(self, name='FreeGeom_Device')
-
-        self.params = params
-
-        # Generate waveguide.
-        waveguide = WaveGuide(
-            params['layer'],
-            params['len_wg'],
-            params['height_wg'],
-            params['photonic_crystal_params']
-        )
-
-        # Add anchors.
-        waveguide.add_anchors(
-            params["dx_anchor"],
-            params["width_anchor"],
-            params["widthmax_anchor"],
-            params["length_anchor"],
-            params['which_anchors']
-        )
 
 class TaperedWaveGuide(SividdleDevice):
     """Device describing tapered waveguide.
@@ -1051,6 +908,241 @@ class TaperedWaveGuide(SividdleDevice):
             ]
         )
 
+
+class EllipseArray(SividdleDevice):
+    """Device containing an Array of ellipses.
+
+    These arrays can be used to construct photonic crystal cavities.
+    Nonclature carried over from https://arxiv.org/pdf/1907.13200.pdf
+
+    Parameters
+    ----------
+    layer: int
+        Target layer.
+    hx_array: numpy.array
+        Width of ellipses.
+    hy_array: numpy.array
+        Height of ellipses.
+    a_consts_array: numpy.array:
+        Lattice constants.
+    """
+
+    def __init__(self, layer, hx_array, hy_array, a_consts_array):
+
+        # Check correct array lengths
+        assert len(hy_array) is len(hx_array), \
+            "Please provide arrays of equal length"
+
+        assert len(a_consts_array) is (len(hx_array)-1), \
+            "Please provide a lattice constant array with one fewer"+\
+                " element than the hole arrays."
+
+        SividdleDevice.__init__(self, name='EllipseArray')
+
+        # Prepend 0 to lattice constant array for convenience
+        a_consts_array = np.insert(a_consts_array, 0, 0)
+        shift = 0
+
+        # Generate ellipses
+        for (hx, hy, a) in zip(hx_array, hy_array, a_consts_array):
+            shift += a
+            ellipse = gdspy.Round(
+                (0 + shift, 0),
+                [hx * 0.5, hy * 0.5],
+                tolerance=1e-4,
+                layer=layer
+            )
+            self.add(ellipse)
+
+
+class AdiabaticTaperedEllipseArray(SividdleDevice):
+    """Device containing an Array of ellipses tapering down.
+
+    The ellipses are tapered down from hy_init to hy_final while maintaining
+    the aspect ratio. The lattice constant is assumed to be constant
+
+    These arrays can be used to construct photonic crystal cavities.
+    Nonclature carried over from https://arxiv.org/pdf/1907.13200.pdf.
+
+    Parameters
+    ----------
+    hx_init: float
+        Initial value of hx.
+    hy_init: float
+        Initial value of hx.
+    hy_final: float
+        Final value of hy.
+    a_const: float:
+        Lattice constant.
+    num_taper: int
+        Number of tapered cells.
+    num_cells: int
+        Number of non-tapered cells.
+    flip: boolean
+        If True, flip array. Tapered section
+        now is left.
+    both: boolean:
+        If True, add taper on both sides.
+    """
+
+    def __init__(self, layer, hx_init, hy_init,
+                 hy_final, a_const, num_taper, num_cells, flip, both):
+
+        SividdleDevice.__init__(self, name='AdiabaticTaperedEllipseArray')
+
+        # Arrays of untapered devices
+        hx_array_init = np.ones(num_cells) * hx_init
+        hy_array_init = np.ones(num_cells) * hy_init
+
+        # Construct Hx array.
+        hy_array_tapered = np.linspace(
+            hy_init,
+            hy_final,
+            num_taper
+        )
+
+        # Construct Hx array.
+        hx_array_tapered = np.linspace(
+            hx_init,
+            hy_final,
+            num_taper
+        )
+
+        # Appending tapered and nontapered arrays
+        hx_array = np.append(hx_array_init, hx_array_tapered)
+        hy_array = np.append(hy_array_init, hy_array_tapered)
+
+        if both:
+            hx_array = np.append(np.flip(hx_array_tapered), hx_array)
+            hy_array = np.append(np.flip(hy_array_tapered), hy_array)
+            num_taper += num_taper
+
+        if flip:
+            hx_array = np.flip(hx_array)
+            hy_array = np.flip(hy_array)
+
+        # Construct array of constant lattice consants.
+        a_consts_array = np.ones(num_taper + num_cells - 1) * a_const
+
+        self << EllipseArray(layer, hx_array, hy_array, a_consts_array)
+
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
+
+
+class DoubleTaperedDevice(SividdleDevice):
+    """A device comprised of waveguide tapers on both sides,
+    two quadratic tapered supports on either side of the cavity,
+    and a photonic crystal cavity (PCC) zone at the center. That is,
+    the PCC is defined by the following parameters and is allowed
+    to be asymmetric both in hole dimensions and hole spacing.
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing the following parameters:
+
+    params['cavity_length']: float
+        length of the cavity region
+    params['layer_wg']: int
+        Layer of waveguide
+    params['name']: string
+        Name of GDS cell.
+    params['tapered_coupler_length']: float
+        length of the tapers on either side of the device
+    params['tapered_coupler_minWidth']: float
+        minimum width of the tapers on either side of the device
+    params['tapered_support_length']: float
+        length of the taperedSupports
+    params['tapered_support_width']: float
+        tapered support width. Typically, this is 1.4*width
+    params['waveguide_spacer_length']: float
+        length of the spacers that separate the tapered coupler
+        from the tapered support and that space out the two 
+        tapered supports on either side.
+    params['width']: float
+        cavity and waveguide width
+    """
+
+
+    def __init__(self, params):
+
+        SividdleDevice.__init__(self, name=params['name'])
+        
+        self.layer_wg = params['layer_wg']
+        self.tapered_coupler_length = params['tapered_coupler_length']
+        self.waveguide_spacer_length = params['waveguide_spacer_length']
+        self.cavity_length = params['cavity_length']
+        self.tapered_support_length = params['tapered_support_length']
+        self.tapered_coupler_minWidth = params['tapered_coupler_minWidth']
+        self.width = params['width']
+        self.tapered_support_width = params['tapered_support_width']
+
+        self.tapered_support_params = {
+            'name'           : "taperedSupport",
+            'layer'          : self.layer_wg,
+            'taper_length_1' : self.tapered_support_length/2,
+            'straight_length_center': 0,
+            'taper_length_2' : self.tapered_support_length/2,
+            'width_1'        : self.width,
+            'width_center'   : self.tapered_support_width,
+            'width_2'        : self.width
+        }
+
+        # Create paths to define segments of device
+        spacer_path = pp.straight(length = self.waveguide_spacer_length)
+        cavity_path = pp.straight(length = self.cavity_length)
+
+        # Create blank CrossSection objects to be used for each path
+        spacer_xs = CrossSection()
+        cavity_xs = CrossSection()
+
+        # Add a section to each CrossSection to define the width for extrusion
+        spacer_xs.add(width = self.width, offset = 0, layer = self.layer_wg,
+            ports = ('in_spacer','out_spacer'))
+        cavity_xs.add(width = self.width, offset = 0, layer = self.layer_wg,
+            ports = ('in_cavity','out_cavity'))
+        
+        # Combine the Paths and the CrossSections to make Devices
+        spacer_dev = spacer_path.extrude(cross_section = spacer_xs)
+        cavity_dev = cavity_path.extrude(cross_section = cavity_xs)
+
+        # Create TaperedSupport Device
+        taperedSupport = TaperedSupport(self.tapered_support_params)
+
+        # Create Taper Device for tapered couplers
+        taperedCoupler = Taper(layer = self.layer_wg,name = "TaperedCoupler",
+                length = self.tapered_coupler_length,
+                dy_min = self.tapered_coupler_minWidth, dy_max=self.width)
+
+        # Create Device_References of the Devices
+        spacer1_ref = self.add_ref(spacer_dev)
+        spacer2_ref = self.add_ref(spacer_dev)
+        spacer3_ref = self.add_ref(spacer_dev)
+        spacer4_ref = self.add_ref(spacer_dev)
+        cavity_ref = self.add_ref(cavity_dev)
+        taperedSupport1_ref = self.add_ref(taperedSupport)
+        taperedSupport2_ref = self.add_ref(taperedSupport)
+        taperedSupport3_ref = self.add_ref(taperedSupport)
+        taperedSupport4_ref = self.add_ref(taperedSupport)
+        taperedCoupler1_ref = self.add_ref(taperedCoupler)
+        taperedCoupler2_ref = self.add_ref(taperedCoupler)
+
+        # Connect up the references to build the geometry
+        spacer1_ref.connect('in_spacer',taperedCoupler1_ref.ports['tpport2'])
+        taperedSupport1_ref.connect('tpport1',spacer1_ref.ports['out_spacer'])
+        spacer2_ref.connect('in_spacer',taperedSupport1_ref.ports['tpport2'])
+        taperedSupport2_ref.connect('tpport1',spacer2_ref.ports['out_spacer'])
+        cavity_ref.connect('in_cavity',taperedSupport2_ref.ports['tpport2'])
+        taperedSupport3_ref.connect('tpport1',cavity_ref.ports['out_cavity'])
+        spacer3_ref.connect('in_spacer',taperedSupport3_ref.ports['tpport2'])
+        taperedSupport4_ref.connect('tpport1',spacer3_ref.ports['out_spacer'])
+        spacer4_ref.connect('in_spacer',taperedSupport4_ref.ports['tpport2'])
+        taperedCoupler2_ref.connect('tpport2',spacer4_ref.ports['out_spacer'])
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
+
+
 class OvercoupledPCC_v0p4p2(SividdleDevice):
     """Airholes for V0p4p2 Devices
 
@@ -1225,123 +1317,30 @@ class OvercoupledPCC_v0p4p2(SividdleDevice):
         return all_hx,all_hy,all_a
 
 
-class EllipseArray(SividdleDevice):
-    """Device containing an Array of ellipses.
+class OvercoupledAirholeDevice_v0p4p2(SividdleDevice):
+     def __init__(self, PCC_params, DT_params, scaling):
 
-    These arrays can be used to construct photonic crystal cavities.
-    Nonclature carried over from https://arxiv.org/pdf/1907.13200.pdf
+        SividdleDevice.__init__(self, name='FreeGeom_Device')
 
-    Parameters
-    ----------
-    layer: int
-        Target layer.
-    hx_array: numpy.array
-        Width of ellipses.
-    hy_array: numpy.array
-        Height of ellipses.
-    a_consts_array: numpy.array:
-        Lattice constants.
-    """
+        self.PCC_params = PCC_params
+        self.DT_params = DT_params
+        self.scaling = scaling
 
-    def __init__(self, layer, hx_array, hy_array, a_consts_array):
+        self.PCC_params['aL'] *= self.scaling
+        self.PCC_params['aR'] *= self.scaling
+        self.PCC_params['hxL'] *= self.scaling
+        self.PCC_params['hyL'] *= self.scaling
+        self.PCC_params['hxR'] *= self.scaling
+        self.PCC_params['hyR'] *= self.scaling
 
-        # Check correct array lengths
-        assert len(hy_array) is len(hx_array), \
-            "Please provide arrays of equal length"
+        self.DT_params['tapered_support_width'] *= self.scaling
+        self.DT_params['width'] *= self.scaling
 
-        assert len(a_consts_array) is (len(hx_array)-1), \
-            "Please provide a lattice constant array with one fewer"+\
-                " element than the hole arrays."
+        device_holes = OvercoupledPCC_v0p4p2(self.PCC_params)
+        device_waveguide = DoubleTaperedDevice(self.DT_params)
 
-        SividdleDevice.__init__(self, name='EllipseArray')
-
-        # Prepend 0 to lattice constant array for convenience
-        a_consts_array = np.insert(a_consts_array, 0, 0)
-        shift = 0
-
-        # Generate ellipses
-        for (hx, hy, a) in zip(hx_array, hy_array, a_consts_array):
-            shift += a
-            ellipse = gdspy.Round(
-                (0 + shift, 0),
-                [hx * 0.5, hy * 0.5],
-                tolerance=1e-4,
-                layer=layer
-            )
-            self.add(ellipse)
-
-
-class AdiabaticTaperedEllipseArray(SividdleDevice):
-    """Device containing an Array of ellipses tapering down.
-
-    The ellipses are tapered down from hy_init to hy_final while maintaining
-    the aspect ratio. The lattice constant is assumed to be constant
-
-    These arrays can be used to construct photonic crystal cavities.
-    Nonclature carried over from https://arxiv.org/pdf/1907.13200.pdf.
-
-    Parameters
-    ----------
-    hx_init: float
-        Initial value of hx.
-    hy_init: float
-        Initial value of hx.
-    hy_final: float
-        Final value of hy.
-    a_const: float:
-        Lattice constant.
-    num_taper: int
-        Number of tapered cells.
-    num_cells: int
-        Number of non-tapered cells.
-    flip: boolean
-        If True, flip array. Tapered section
-        now is left.
-    both: boolean:
-        If True, add taper on both sides.
-    """
-
-    def __init__(self, layer, hx_init, hy_init,
-                 hy_final, a_const, num_taper, num_cells, flip, both):
-
-        SividdleDevice.__init__(self, name='AdiabaticTaperedEllipseArray')
-
-        # Arrays of untapered devices
-        hx_array_init = np.ones(num_cells) * hx_init
-        hy_array_init = np.ones(num_cells) * hy_init
-
-        # Construct Hx array.
-        hy_array_tapered = np.linspace(
-            hy_init,
-            hy_final,
-            num_taper
-        )
-
-        # Construct Hx array.
-        hx_array_tapered = np.linspace(
-            hx_init,
-            hy_final,
-            num_taper
-        )
-
-        # Appending tapered and nontapered arrays
-        hx_array = np.append(hx_array_init, hx_array_tapered)
-        hy_array = np.append(hy_array_init, hy_array_tapered)
-
-        if both:
-            hx_array = np.append(np.flip(hx_array_tapered), hx_array)
-            hy_array = np.append(np.flip(hy_array_tapered), hy_array)
-            num_taper += num_taper
-
-        if flip:
-            hx_array = np.flip(hx_array)
-            hy_array = np.flip(hy_array)
-
-        # Construct array of constant lattice consants.
-        a_consts_array = np.ones(num_taper + num_cells - 1) * a_const
-
-        self << EllipseArray(layer, hx_array, hy_array, a_consts_array)
-
+        self << device_holes
+        self << device_waveguide
         # Shift center of bounding box to origin.
         self.center = [0, 0]
 
