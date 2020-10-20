@@ -61,6 +61,7 @@ def run_example():
     resonance_scaling = targetResonance/nominalResonance
 
 
+
     PCC_params = {
         'layer'               : 2,
         'aL'                  : 0.2717,
@@ -80,6 +81,10 @@ def run_example():
         'resonance_wavelength': 0.737
     }
 
+    doubleTaperDevice_holes = sivp.OvercoupledPCC_v0p4p2(PCC_params)
+    # write_field << doubleTaperDevice_holes
+
+    #cavity length 15
     DT_params = {
         'cavity_length'         : 15.0,
         'layer_wg'              : 1,
@@ -92,22 +97,8 @@ def run_example():
         'width'               : waveguide_width_HSQ
     }
 
-    DT_wSupport_params = {
-        'cavity_length'         : 15.0,
-        'layer_wg'              : 1,
-        'name'                  : "DT_wSupport",
-        'tapered_coupler_length': 17.5,
-        'tapered_support_length': 10,
-        'tapered_coupler_minWidth': 0.11,
-        'tapered_coupler_support_beam_length' : 6.0,
-        'tapered_coupler_support_beam_width'  : 0.33,
-        'tapered_coupler_support_roof_height' : 1.5,
-        'tapered_coupler_support_house_width': 1.1,
-        'tapered_coupler_support_house_length': 1.5,
-        'tapered_support_width' : 1.4*waveguide_width_HSQ,
-        'waveguide_spacer_length': 6,
-        'width'               : waveguide_width_HSQ
-    }
+    doubleTaperDevice = sivp.DoubleTaperedDevice(DT_params)
+    # write_field << doubleTaperDevice
 
 
     num_cols = 5
@@ -123,7 +114,6 @@ def run_example():
     offset = 6.0
     photonic_scaling = np.linspace(0.965,1.035,num_cols)
     fab_scaling = resonance_scaling*photonic_scaling
-    print(fab_scaling)
     for i,x in enumerate(np.linspace(-wf_width/2+margin_large,wf_width/2-margin_large,num_cols)):
         text_params = {
             'name'                  : 'label_{:1.5}'.format(photonic_scaling[i]),
@@ -140,19 +130,15 @@ def run_example():
         label_bot_ref.move([x,-wf_width/2+margin_y/2])
     
         # x += (i>num_cols/2)*margin_small
-        v0p4p2_dev0 = sivp.OvercoupledAirholeDevice_v0p4p2(PCC_params, DT_params, fab_scaling[i])
-        v0p4p2_dev1 = sivp.OvercoupledAirholeDevice_wSupport_v0p4p2(PCC_params, DT_wSupport_params, fab_scaling[i])
+        v0p4p2_dev = sivp.OvercoupledAirholeDevice_v0p4p2(PCC_params, DT_params, fab_scaling[i])
         # if(i==int(num_cols/2)):
         #     pass
         # else:
         #     for y in np.linspace(wf_width/2-margin_small-offset*i,-wf_width/2+margin_small+offset*(num_cols-i),num_rows):
         #         dev_ref = write_field.add_ref(v0p4p2_dev)
         #         dev_ref.move([x,y])
-        for j,y in enumerate(np.linspace(wf_width/2-margin_y-offset*i,-wf_width/2+margin_y+offset*(num_cols-i-1),num_rows)):
-            if(j%2==0):
-                dev_ref = write_field.add_ref(v0p4p2_dev0)
-            else:
-                dev_ref = write_field.add_ref(v0p4p2_dev1)
+        for y in np.linspace(wf_width/2-margin_y-offset*i,-wf_width/2+margin_y+offset*(num_cols-i-1),num_rows):
+            dev_ref = write_field.add_ref(v0p4p2_dev)
             dev_ref.move([x,y])
 
     
@@ -240,32 +226,16 @@ def run_example():
     # write_field << sweep_box_vertical.rotate(45).move([+65, -80])
 
     # Add Arrow pointing to top right alignment marker
-    rarrow_params = {
+    arrow_params = {
         'name'          : 'arrow',
-        'text'          : '>',
-        'fontsize'      : 40,
+        'text'          : '→',
+        'fontsize'      : 45,
         'style'         : 'normal',
         'layer'         : 4,
     }
 
-    larrow_params = {
-        'name'          : 'arrow',
-        'text'          : '<',
-        'fontsize'      : 40,
-        'style'         : 'normal',
-        'layer'         : 4,
-    }
-
-    rarrow = sivp.RenderedText(rarrow_params)
-    rarrow_top_ref = write_field.add_ref(rarrow)
-    rarrow_bot_ref = write_field.add_ref(rarrow)
-    rarrow_top_ref.move([200, 235])
-    rarrow_bot_ref.move([200, -235])
-    larrow = sivp.RenderedText(larrow_params)
-    larrow_top_ref = write_field.add_ref(larrow)
-    larrow_bot_ref = write_field.add_ref(larrow)
-    larrow_top_ref.move([-200, 235])
-    larrow_bot_ref.move([-200, -235])
+    # arrow = sivp.RenderedText(arrow_params)
+    # write_field << arrow.move([200, 227])
 
     # # For fun, add a picture of the Harvard Logo to the empty space
     # picture_parameters = {
@@ -280,7 +250,7 @@ def run_example():
     # write_field << image
 
     # # Export as GDS file.
-    write_field.write_gds('Ovrcpld_v0p4p2.gds')
+    write_field.write_gds('Ovrcpld_v0p4p1.gds')
 
 
 if __name__ == "__main__":

@@ -441,6 +441,100 @@ class Taper(SividdleDevice):
             orientation=0
         )
 
+class TaperedCoupler_wSupport(SividdleDevice):
+    """Device describing a tapering section of a waveguide
+    combined with a house-pentagon to support the tip.
+
+    This device will have two ports associated with its
+     left and right ends named 'tpport1' and 'tpport2'.
+
+    Parameters
+    ----------
+    layer: int
+        Layer of waveguide.
+    length: float
+        length of taper.
+    dy_min: float
+        Minimum width of taper.
+    dy_max: float
+        Maximum width of taper.
+    beam_length: float
+        length of the beam that connects the house
+        to the taper
+    beam_width: float
+        width of the support beam that connects
+        the house to the taper
+    roof_height: float
+    house_width: float
+        w
+    house_length: float
+
+    """
+
+    def __init__(self, layer, name, length, dy_min, dy_max, beam_length, 
+    beam_width, roof_height, house_width, house_length):
+
+        SividdleDevice.__init__(self, name=name)
+
+        self.add_polygon(
+            [
+                (0, -dy_min/2),
+                (0, dy_min/2),
+                (length, dy_max/2),
+                (length, -dy_max/2)
+            ],
+            layer=layer
+        )
+
+        taperSlope = (dy_min-dy_max)/(2*length)
+        beamOverlap_x = (beam_width/2 - dy_max/2)/taperSlope
+
+        self.add_polygon(
+            [
+                (beamOverlap_x, -beam_width/2),
+                (beamOverlap_x, beam_width/2),
+                (-beam_length, beam_width/2),
+                (-beam_length, -beam_width/2)
+            ],
+            layer=layer
+        )
+
+        # add triangular transition to rectangular support
+        self.add_polygon(
+            [
+                (-beam_length, -beam_width/2),
+                (-beam_length, beam_width/2),
+                (-beam_length-roof_height, house_width/2),
+                (-beam_length-roof_height, -house_width/2)
+            ],
+            layer=layer
+        )
+
+        # add rectangular support
+        self.add_polygon(
+            [
+                (-beam_length-roof_height, -house_width/2),
+                (-beam_length-roof_height, house_width/2),
+                (-beam_length-roof_height-house_length, house_width/2),
+                (-beam_length-roof_height-house_length, -house_width/2)
+            ],
+            layer=layer
+        )
+
+        self.add_port(
+            name='tpport1',
+            midpoint=[-beam_length-roof_height-house_length, 0],
+            width=house_width,
+            orientation=180
+        )
+
+        self.add_port(
+            name='tpport2',
+            midpoint=[length, 0],
+            width=dy_max,
+            orientation=0
+        )
+
 class TaperedSupport(SividdleDevice):
     """Device describing a tapered support section of a 
     waveguide, in the style of Mike and Bart. There are several
@@ -1142,6 +1236,142 @@ class DoubleTaperedDevice(SividdleDevice):
         # Shift center of bounding box to origin.
         self.center = [0, 0]
 
+class DoubleTaperedDevice_WithCouplerSupports(SividdleDevice):
+    """A device comprised of waveguide tapers on both sides,
+    two quadratic tapered supports on either side of the cavity,
+    and a photonic crystal cavity (PCC) zone at the center. The PCC
+    holes are defined in a separate class. The tapered waveguide
+    couplers are supported at their tips with larger, non-freestanding
+    structures.
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing the following parameters:
+
+    params['cavity_length']: float
+        length of the cavity region
+    params['layer_wg']: int
+        Layer of waveguide
+    params['name']: string
+        Name of GDS cell.
+    params['tapered_coupler_length']: float
+        length of the tapers on either side of the device
+    params['tapered_coupler_minWidth']: float
+        minimum width of the tapers on either side of the device
+    params['tapered_coupler_support_length']: float
+        length of tapered coupler support
+    params['tapered_coupler_support_width']: float
+        max width of tapered coupler support
+    params['tapered_support_length']: float
+        length of the taperedSupports
+    params['tapered_support_width']: float
+        tapered support width. Typically, this is 1.4*width
+    params['waveguide_spacer_length']: float
+        length of the spacers that separate the tapered coupler
+        from the tapered support and that space out the two 
+        tapered supports on either side.
+    params['width']: float
+        cavity and waveguide width
+    """
+
+
+    def __init__(self, params):
+
+        SividdleDevice.__init__(self, name=params['name'])
+        
+        self.layer_wg = params['layer_wg']
+        self.tapered_coupler_length = params['tapered_coupler_length']
+        self.waveguide_spacer_length = params['waveguide_spacer_length']
+        self.cavity_length = params['cavity_length']
+        self.tapered_support_length = params['tapered_support_length']
+        self.tapered_coupler_minWidth = params['tapered_coupler_minWidth']
+        self.tapered_coupler_support_beam_length = params['tapered_coupler_support_beam_length']
+        self.tapered_coupler_support_beam_width = params['tapered_coupler_support_beam_width']
+        self.tapered_coupler_support_roof_height = params['tapered_coupler_support_roof_height']
+        self.tapered_coupler_support_house_width = params['tapered_coupler_support_house_width']
+        self.tapered_coupler_support_house_length = params['tapered_coupler_support_house_length']
+        self.width = params['width']
+        self.tapered_support_width = params['tapered_support_width']
+
+        self.tapered_support_params = {
+            'name'           : "taperedSupport",
+            'layer'          : self.layer_wg,
+            'taper_length_1' : self.tapered_support_length/2,
+            'straight_length_center': 0,
+            'taper_length_2' : self.tapered_support_length/2,
+            'width_1'        : self.width,
+            'width_center'   : self.tapered_support_width,
+            'width_2'        : self.width
+        }
+
+        # Create paths to define segments of device
+        spacer_path = pp.straight(length = self.waveguide_spacer_length)
+        cavity_path = pp.straight(length = self.cavity_length)
+
+        # Create blank CrossSection objects to be used for each path
+        spacer_xs = CrossSection()
+        cavity_xs = CrossSection()
+
+        # Add a section to each CrossSection to define the width for extrusion
+        spacer_xs.add(width = self.width, offset = 0, layer = self.layer_wg,
+            ports = ('in_spacer','out_spacer'))
+        cavity_xs.add(width = self.width, offset = 0, layer = self.layer_wg,
+            ports = ('in_cavity','out_cavity'))
+        
+        # Combine the Paths and the CrossSections to make Devices
+        spacer_dev = spacer_path.extrude(cross_section = spacer_xs)
+        cavity_dev = cavity_path.extrude(cross_section = cavity_xs)
+
+        # Create TaperedSupport Device
+        taperedSupport = TaperedSupport(self.tapered_support_params)
+
+        # Create Taper Device for tapered couplers
+        
+        taperedCoupler = TaperedCoupler_wSupport(layer = self.layer_wg,name = "TaperedCoupler",
+                length = self.tapered_coupler_length,
+                dy_min = self.tapered_coupler_minWidth, dy_max=self.width,
+                beam_length = self.tapered_coupler_support_beam_length,
+                beam_width = self.tapered_coupler_support_beam_width,
+                roof_height = self.tapered_coupler_support_roof_height,
+                house_width = self.tapered_coupler_support_house_width,
+                house_length = self.tapered_coupler_support_house_length)
+        # # and for coupler supports
+        # couplerSupport = Taper(layer = self.layer_wg,name = "TaperedCouplerSupport",
+        #         length = self.tapered_coupler_support_length,
+        #         dy_min = self.tapered_coupler_support_width, dy_max=3*self.tapered_coupler_support_width)
+
+        # Create Device_References of the Devices
+        spacer1_ref = self.add_ref(spacer_dev)
+        spacer2_ref = self.add_ref(spacer_dev)
+        spacer3_ref = self.add_ref(spacer_dev)
+        spacer4_ref = self.add_ref(spacer_dev)
+        cavity_ref = self.add_ref(cavity_dev)
+        taperedSupport1_ref = self.add_ref(taperedSupport)
+        taperedSupport2_ref = self.add_ref(taperedSupport)
+        taperedSupport3_ref = self.add_ref(taperedSupport)
+        taperedSupport4_ref = self.add_ref(taperedSupport)
+        taperedCoupler1_ref = self.add_ref(taperedCoupler)
+        # taperedCouplerSupport1_ref = self.add_ref(couplerSupport)
+        taperedCoupler2_ref = self.add_ref(taperedCoupler)
+        # taperedCouplerSupport2_ref = self.add_ref(couplerSupport)
+
+        # Connect up the references to build the geometry
+        # taperedCoupler1_ref.connect('tpport1',taperedCouplerSupport1_ref.ports['tpport1'])
+        spacer1_ref.connect('in_spacer',taperedCoupler1_ref.ports['tpport2'])
+        taperedSupport1_ref.connect('tpport1',spacer1_ref.ports['out_spacer'])
+        spacer2_ref.connect('in_spacer',taperedSupport1_ref.ports['tpport2'])
+        taperedSupport2_ref.connect('tpport1',spacer2_ref.ports['out_spacer'])
+        cavity_ref.connect('in_cavity',taperedSupport2_ref.ports['tpport2'])
+        taperedSupport3_ref.connect('tpport1',cavity_ref.ports['out_cavity'])
+        spacer3_ref.connect('in_spacer',taperedSupport3_ref.ports['tpport2'])
+        taperedSupport4_ref.connect('tpport1',spacer3_ref.ports['out_spacer'])
+        spacer4_ref.connect('in_spacer',taperedSupport4_ref.ports['tpport2'])
+        taperedCoupler2_ref.connect('tpport2',spacer4_ref.ports['out_spacer'])
+        # taperedCouplerSupport2_ref.connect('tpport1',taperedCoupler2_ref.ports['tpport1'])
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
+
 
 class OvercoupledPCC_v0p4p2(SividdleDevice):
     """Airholes for V0p4p2 Devices
@@ -1322,10 +1552,10 @@ class OvercoupledAirholeDevice_v0p4p2(SividdleDevice):
 
         SividdleDevice.__init__(self, name='FreeGeom_Device')
 
-        self.PCC_params = PCC_params
-        self.DT_params = DT_params
+        self.PCC_params = PCC_params.copy()
+        self.DT_params = DT_params.copy()
         self.scaling = scaling
-
+        print("scaling = {},hxL = {}".format(scaling,self.PCC_params['hxL']))
         self.PCC_params['aL'] *= self.scaling
         self.PCC_params['aR'] *= self.scaling
         self.PCC_params['hxL'] *= self.scaling
@@ -1338,6 +1568,33 @@ class OvercoupledAirholeDevice_v0p4p2(SividdleDevice):
 
         device_holes = OvercoupledPCC_v0p4p2(self.PCC_params)
         device_waveguide = DoubleTaperedDevice(self.DT_params)
+
+        self << device_holes
+        self << device_waveguide
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
+
+class OvercoupledAirholeDevice_wSupport_v0p4p2(SividdleDevice):
+     def __init__(self, PCC_params, DT_params, scaling):
+
+        SividdleDevice.__init__(self, name='FreeGeom_Device')
+
+        self.PCC_params = PCC_params.copy()
+        self.DT_params = DT_params.copy()
+        self.scaling = scaling
+        print("scaling = {},hxL = {}".format(scaling,self.PCC_params['hxL']))
+        self.PCC_params['aL'] *= self.scaling
+        self.PCC_params['aR'] *= self.scaling
+        self.PCC_params['hxL'] *= self.scaling
+        self.PCC_params['hyL'] *= self.scaling
+        self.PCC_params['hxR'] *= self.scaling
+        self.PCC_params['hyR'] *= self.scaling
+
+        self.DT_params['tapered_support_width'] *= self.scaling
+        self.DT_params['width'] *= self.scaling
+
+        device_holes = OvercoupledPCC_v0p4p2(self.PCC_params)
+        device_waveguide = DoubleTaperedDevice_WithCouplerSupports(self.DT_params)
 
         self << device_holes
         self << device_waveguide
