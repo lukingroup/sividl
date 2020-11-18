@@ -67,7 +67,7 @@ class SividdleDevice(Device):
             layer=layer
         )
 
-        # perform substraction for positive e-beam resist
+        # perform subtraction for positive e-beam resist
         inverse = pg.boolean(
             A=bounding_box,
             B=self,
@@ -77,7 +77,7 @@ class SividdleDevice(Device):
 
         return inverse
 
-    def add_label(self, params):
+    def add_dev_label(self, params):
         """Adding a label to device.
 
         Parameters
@@ -227,26 +227,23 @@ class CrossAligmentMark(SividdleDevice):
         else:
             self << interim_alignment_mark
 
-        # Add bounding box
-
-        # Make exposure box.
+        # Center device
+        # Shift center of bounding box to origin
+        self.center = [0, 0]
+        # Make marker clear window.
         if params['exposure_box']:
             exposure_box_width = self.xsize \
                 + 2 * params['exposure_box_dx']
-            exposure_box = pg.rectangle(
-                size=(exposure_box_width, exposure_box_width),
+
+            # exposure box is really a circle b/c corners make cracks
+            exposure_box = gdspy.Round(
+                (0, 0),
+                [exposure_box_width * 0.5, exposure_box_width * 0.5],
+                tolerance=1e-4,
                 layer=params['exposure_box_layer']
             )
-            self << exposure_box.move(
-                (
-                    self.xsize * 0.5 - exposure_box.xsize * 0.5,
-                    self.ysize * 0.5 - exposure_box.ysize * 0.5,
-                )
-            )
-
-            # Center device
-            # Shift center of bounding box to origin
-            self.center = [0, 0]
+            
+            self.add(exposure_box)
 
             # Add dot at alignment point
             if params['make_dot']:
@@ -266,15 +263,14 @@ class CrossAligmentMark(SividdleDevice):
     def record_dot_position(self, textlayer):
         """Read center position and record it in layer."""
         center = (self.x, self.y)
-        # self.label(
-        #     text='Aignment mark center = ({:.2f}, {:.3f}) '.format(
-        #         center[0],
-        #         center[1]
-        #     ),
-        #     position=center,
-        #     layer=textlayer
-        # )
-        # commented out b/c throwing error with new phidl 1.4.2
+        self.add_label(
+            text='Aignment mark center = ({:.2f}, {:.3f}) '.format(
+                center[0],
+                center[1]
+            ),
+            position=center,
+            layer=textlayer
+        )
 
 
 class WriteFieldCrossAligmentMark(SividdleDevice):
@@ -1601,6 +1597,27 @@ class OvercoupledAirholeDevice_wSupport_v0p4p2(SividdleDevice):
         # Shift center of bounding box to origin.
         self.center = [0, 0]
 
+class ImplantationWindow(SividdleDevice):
+   """
+   This is pretty much just a wrapper for gdspy's round
+   """ 
+   def __init__(self, width, height, layer):
+       SividdleDevice.__init__(self, name='Implant_Window')
+       self.width = width
+       self.height = height
+       self.layer = layer
+       implantWindow = pg.rectangle(
+                    size=(width, height),
+                    layer=layer
+                )
+    #    implantWindow = gdspy.Round(
+    #             (0, 0),
+    #             [width * 0.5, height * 0.5],
+    #             tolerance=1e-4,
+    #             layer=layer
+    #         )
+       self.add(implantWindow)
+       self.center = [0,0]
 
 class RetroReflector(SividdleDevice):
     """Device containing retroreflector.
