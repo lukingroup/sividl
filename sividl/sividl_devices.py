@@ -1245,6 +1245,8 @@ class ImageArray(SividdleDevice):
         Physical size of one pixel on the design in um.
     params['layer']: int
         Layer where picture will be displayed.
+    params['image_device']: SividdleDevice
+        Device which is used as pixel. If none, a rectangle is used.
     """
 
     def __init__(self, params):
