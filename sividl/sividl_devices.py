@@ -1258,22 +1258,26 @@ class ImageArray(SividdleDevice):
         x_image = bitmap.shape[0]
         y_image = bitmap.shape[1]
 
-        # Define pixel polygon
-        pixel = pg.rectangle(
-            size=(
-                params['pixel_size'],
-                params['pixel_size']
-            ),
-            layer=params['layer']
-        )
+        if params['image_device'] == None:
+            # Define pixel polygon
+            pixel = pg.rectangle(
+                size=(
+                    params['pixel_size'],
+                    params['pixel_size']
+                ),
+                layer=params['layer']
+            )
+        else:
+            pixel = params['image_device']
+            
 
         for x in range(x_image):
             for y in range(y_image):
                 if bitmap[x, y] == 1:
                     self << pg.copy(pixel).move(
                         (
-                            x * params['pixel_size'],
-                            y * params['pixel_size']
+                            x * pixel.xsize,
+                            y * pixel.ysize
                         )
                     )
 
