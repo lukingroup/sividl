@@ -1270,16 +1270,15 @@ class ImageArray(SividdleDevice):
         else:
             pixel = params['image_device']
             
-
         for x in range(x_image):
             for y in range(y_image):
                 if bitmap[x, y] == 1:
-                    self << pg.copy(pixel).move(
-                        (
-                            x * pixel.xsize,
+                        reference = self.add_ref(pixel)
+                        reference.move([
+                            x * pixel.xsize, 
                             y * pixel.ysize
+                            ]
                         )
-                    )
 
         # Shift center of bounding box to origin.
         self.center = [0, 0]
