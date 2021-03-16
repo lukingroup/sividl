@@ -51,7 +51,7 @@ def render_text(text, size=None, position=(0, 0),
     return polys
 
 
-def image_to_binary_bitmap(filename, threshhold):
+def image_to_binary_bitmap(filename, threshhold, dither=False):
     """Convert image into binary array.
 
     From:
@@ -64,16 +64,23 @@ def image_to_binary_bitmap(filename, threshhold):
     threshhold: int
         Value from 0-255 separating the white
         from the dark pixels.
+    dither: bool
+        If true, dither image to mimic greyscale. 
 
     Return
     ----------
     bitmap: numpy.array
         Binary bitmap of the array.
     """
-    img = Image.open(filename).convert('L')
-    np_img = np.array(img)
-    np_img = ~np_img  # invert B&W
-    np_img[np_img <= threshhold] = 0
-    np_img[np_img > threshhold] = 1
+
+    if dither:
+        img = Image.open(filename).convert('1')
+        np_img = np.array(img)
+    else:
+        img = Image.open(filename).convert('L')
+        np_img = np.array(img)
+        np_img = ~np_img  # invert B&W
+        np_img[np_img <= threshhold] = 0
+        np_img[np_img > threshhold] = 1
 
     return np_img

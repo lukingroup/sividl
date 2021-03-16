@@ -1240,13 +1240,16 @@ class ImageArray(SividdleDevice):
     params['image']: string
         Path to image
     params['threshold']: int
-        Threshold from 0 - 255 separating black from white
+        Threshold from 0 - 255 separating black from white. Not used
+        if picture dithering is enabled. 
     params['pixel_size']: int
         Physical size of one pixel on the design in um.
     params['layer']: int
         Layer where picture will be displayed.
     params['image_device']: SividdleDevice
         Device which is used as pixel. If none, a rectangle is used.
+    params['dither']: Boolean
+        If true, picture dithering is used to approximate greyscale. 
     """
 
     def __init__(self, params):
@@ -1254,7 +1257,7 @@ class ImageArray(SividdleDevice):
         SividdleDevice.__init__(self, name=params['name'])
 
         # Generate binary bitmap out of image
-        bitmap = image_to_binary_bitmap(params['image'], params['threshold'])
+        bitmap = image_to_binary_bitmap(params['image'], params['threshold'], params['dither'])
         x_image = bitmap.shape[0]
         y_image = bitmap.shape[1]
 
