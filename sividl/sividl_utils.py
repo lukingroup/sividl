@@ -65,14 +65,13 @@ def image_to_binary_bitmap(filename, threshhold, dither=False):
         Value from 0-255 separating the white
         from the dark pixels.
     dither: bool
-        If true, dither image to mimic greyscale. 
+        If true, dither image to mimic greyscale.
 
     Return
     ----------
     bitmap: numpy.array
         Binary bitmap of the array.
     """
-
     if dither:
         img = Image.open(filename).convert('1')
         np_img = np.array(img)

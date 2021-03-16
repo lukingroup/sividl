@@ -1241,7 +1241,7 @@ class ImageArray(SividdleDevice):
         Path to image
     params['threshold']: int
         Threshold from 0 - 255 separating black from white. Not used
-        if picture dithering is enabled. 
+        if picture dithering is enabled.
     params['pixel_size']: int
         Physical size of one pixel on the design in um.
     params['layer']: int
@@ -1249,7 +1249,7 @@ class ImageArray(SividdleDevice):
     params['image_device']: SividdleDevice
         Device which is used as pixel. If none, a rectangle is used.
     params['dither']: Boolean
-        If true, picture dithering is used to approximate greyscale. 
+        If true, picture dithering is used to approximate greyscale.
     """
 
     def __init__(self, params):
@@ -1257,11 +1257,15 @@ class ImageArray(SividdleDevice):
         SividdleDevice.__init__(self, name=params['name'])
 
         # Generate binary bitmap out of image
-        bitmap = image_to_binary_bitmap(params['image'], params['threshold'], params['dither'])
+        bitmap = image_to_binary_bitmap(
+            params['image'],
+            params['threshold'],
+            params['dither']
+        )
         x_image = bitmap.shape[0]
         y_image = bitmap.shape[1]
 
-        if params['image_device'] == None:
+        if params['image_device'] is None:
             # Define pixel polygon
             pixel = pg.rectangle(
                 size=(
@@ -1272,16 +1276,17 @@ class ImageArray(SividdleDevice):
             )
         else:
             pixel = params['image_device']
-            
+
         for x in range(x_image):
             for y in range(y_image):
                 if bitmap[x, y] == 1:
-                        reference = self.add_ref(pixel)
-                        reference.move([
-                            x * pixel.xsize, 
+                    reference = self.add_ref(pixel)
+                    reference.move(
+                        [
+                            x * pixel.xsize,
                             y * pixel.ysize
-                            ]
-                        )
+                        ]
+                    )
 
         # Shift center of bounding box to origin.
         self.center = [0, 0]

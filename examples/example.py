@@ -149,6 +149,8 @@ def run_example():
         'name'          : 'image',
         'image'         : 'staticfiles/harvard_logo.jpeg',
         'threshold'     : 140,
+        'dither'        : False,
+        'image_device'  : None,
         'pixel_size'    : 0.5,
         'layer'         : 1
     }
