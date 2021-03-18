@@ -170,7 +170,7 @@ class CrossAligmentMark(SividdleDevice):
     params['sep']: int
         Gap between rectangles.
     params['exposure_box']: Boolean
-        If True, add rectangle around alignment markers,
+        If True, add circle around alignment markers,
         used for marker freeing in aligned writes.
     params['exposure_box_dx']: float
         Distance between edge of alignment mark and
