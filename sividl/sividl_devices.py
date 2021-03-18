@@ -264,7 +264,8 @@ class CrossAligmentMark(SividdleDevice):
         """Read center position and record it in layer."""
         center = (self.x, self.y)
         self.add_label(
-            text='Aignment mark center = ({:.2f}, {:.3f}) '.format(
+#             text='Alignment mark center = ({:.2f}, {:.3f}) '
+            text='Alignment mark center = ({:.2f}, {:.3f}) '.format(
                 center[0],
                 center[1]
             ),
@@ -374,7 +375,7 @@ class EtchSlap(SividdleDevice):
 
         self << pg.copy(slit).movey((self.width_slit + self.width_slab) * 0.5)
         self << pg.copy(slit).movey(-(self.width_slit + self.width_slab) * 0.5)
-        self.label(
+        self.add_label(
             text='{} \n slab_width = {:.2f} \
                 \n slit_width = {:.2f} \
                 \n slab_length = {:.2f}'.format(
@@ -641,7 +642,7 @@ class TaperedSupport(SividdleDevice):
 class WaveGuide(SividdleDevice):
     """Device describing a rectangular waveguide.
 
-    This device will have two ports associated with the axis defined
+    This device will hace two ports associated with the axis defined
     by the 'height' dimension, which are named ''wgport1' and 'wgport2'.
 
     Parameters
@@ -652,54 +653,132 @@ class WaveGuide(SividdleDevice):
         length of waveguide.
     height: float
         Height of waveguide.
-    photonic_cristal_params: TBD
+    slab_style: boolean
+        True if the waveguide is "slab style", i.e. if it is defined
+        by two windows around it rather than by a single rectangle
+    window_width: float
+        Used if slab_style is true. Defines width of windows around waveguide
+    photonic_crystal: boolean
+        True if there are holes in the waveguide
     photonic_crystal_params
     """
 
-    def __init__(self, layer, length, height, photonic_crystal_params=None):
+    def __init__(self, params):
+#     def __init__(self, layer, length, height, photonic_crystal_params=None):
 
         SividdleDevice.__init__(self, name='waveguide')
 
-        self.add_polygon(
-            [(0, 0), (length, 0), (length, height), (0, height)],
-            layer=layer
-        )
-        self.add_port(
-            name='wgport1',
-            midpoint=[0, height / 2],
-            width=height,
-            orientation=180
-        )
+#         self.add_polygon(
+#             [(0, 0), (length, 0), (length, height), (0, height)],
+#             layer=layer
+#         )
+#         self.add_port(
+#             name='wgport1',
+#             midpoint=[0, height / 2],
+#             width=height,
+#             orientation=180
+#         )
 
-        self.add_port(
-            name='wgport2',
-            midpoint=[length, height / 2],
-            width=height,
-            orientation=0
-        )
+#         self.add_port(
+#             name='wgport2',
+#             midpoint=[length, height / 2],
+#             width=height,
+#             orientation=0
+#         )
+
+                # retrieve parameters
+        layer = params['layer']
+        length = params['length']
+        height = params['height']
+        phC = params['photonic_crystal']
+        slab_style = params['slab_style']
+
+        if slab_style:
+            window_width = params['window_width']
+            self.add_polygon(
+                [(0, 0), (length, 0), (length, window_width), (0, window_width)],
+                layer=layer
+            )
+            
+            self.add_polygon(
+                [(0, -height), (length, -height), (length, -height-window_width), (0, -height-window_width)],
+                layer=layer
+            )
+#             upper_window.add_port(
+#                 name='wgport1',
+#                 midpoint=[0, window_width / 2],
+#                 width=window_width,
+#                 orientation=180
+#             )
+#             self << upper_window.move(0,10)
+        else:
+            self.add_polygon(
+                [(0, 0), (length, 0), (length, height), (0, height)],
+                layer=layer
+            )
+            
+            self.add_port(
+                name='wgport1',
+                midpoint=[0, height / 2],
+                width=height,
+                orientation=180
+            )
+
+            self.add_port(
+                name='wgport2',
+                midpoint=[length, height / 2],
+                width=height,
+                orientation=0
+            )
 
         # Add photonic crytstal
-        if photonic_crystal_params is not None:
+        if phC:
 
             holes = AdiabaticTaperedEllipseArray(
-                photonic_crystal_params['holes_layer'],
-                photonic_crystal_params['hx_init'],
-                photonic_crystal_params['hy_init'],
-                photonic_crystal_params['hy_final'],
-                photonic_crystal_params['a_const'],
-                photonic_crystal_params['num_taper'],
-                photonic_crystal_params['num_cells'],
-                both=photonic_crystal_params['both'],
+                params['holes_layer'],
+                params['hx_init'],
+                params['hy_init'],
+                params['hy_final'],
+                params['a_const'],
+                int(params['num_taper']),
+                int(params['num_cells']),
+                both=params['both'],
                 flip=True
             )
 
             # wg
+            dy_holes = self.ysize * 0.5
+            if slab_style:
+                dy_holes = -height/2
             self << holes.move(
                 (
-                    holes.xsize * 0.5 + photonic_crystal_params['dx_holes'],
-                    self.ysize * 0.5
+                    self.xsize * 0.5 + params['dx_holes'], #holes.xsize * 0.5 + params['dx_holes'],
+                    dy_holes #self.ysize * 0.5
                 )
             )
+        
+#         # Add photonic crytstal
+#         if photonic_crystal_params is not None:
+
+#             holes = AdiabaticTaperedEllipseArray(
+#                 photonic_crystal_params['holes_layer'],
+#                 photonic_crystal_params['hx_init'],
+#                 photonic_crystal_params['hy_init'],
+#                 photonic_crystal_params['hy_final'],
+#                 photonic_crystal_params['a_const'],
+#                 photonic_crystal_params['num_taper'],
+#                 photonic_crystal_params['num_cells'],
+#                 both=photonic_crystal_params['both'],
+#                 flip=True
+#             )
+
+#             # wg
+#             self << holes.move(
+#                 (
+#                     holes.xsize * 0.5 + photonic_crystal_params['dx_holes'],
+#                     self.ysize * 0.5
+#                 )
+#             )
 
         # Store Layer
         self.layer = layer
