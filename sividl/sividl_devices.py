@@ -76,7 +76,7 @@ class SividdleDevice(Device):
 
         return inverse
 
-    def add_label(self, params):
+    def add_device_label(self, params):
         """Adding a label to device.
 
         Parameters
@@ -265,7 +265,7 @@ class CrossAligmentMark(SividdleDevice):
     def record_dot_position(self, textlayer):
         """Read center position and record it in layer."""
         center = (self.x, self.y)
-        self.label(
+        self.add_label(
             text='Aignment mark center = ({:.2f}, {:.3f}) '.format(
                 center[0],
                 center[1]
@@ -377,7 +377,7 @@ class EtchSlap(SividdleDevice):
 
         self << pg.copy(slit).movey((self.width_slit + self.width_slab) * 0.5)
         self << pg.copy(slit).movey(-(self.width_slit + self.width_slab) * 0.5)
-        self.label(
+        self.add_label(
             text='{} \n slab_width = {:.2f} \
                 \n slit_width = {:.2f} \
                 \n slab_length = {:.2f}'.format(
@@ -1212,7 +1212,7 @@ class RectangularSweep(SividdleDevice):
                     else:
                         sp['grid_label_params']['orientation'] = 't'
 
-                    new_device.add_label(sp['grid_label_params'])
+                    new_device.add_device_label(sp['grid_label_params'])
                 if j == 0 or j == num_iter_y - 1:
                     sp['grid_label_params']['text'] = letter_label[i]
                     if j == 0:
@@ -1220,7 +1220,7 @@ class RectangularSweep(SividdleDevice):
                     else:
                         sp['grid_label_params']['orientation'] = 'r'
 
-                    new_device.add_label(sp['grid_label_params'])
+                    new_device.add_device_label(sp['grid_label_params'])
 
             self << new_device.move([padding_x[i, j], padding_y[i, j]])
 
