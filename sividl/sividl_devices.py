@@ -169,13 +169,13 @@ class CrossAligmentMark(SividdleDevice):
         Width of large rectangle.
     params['sep']: int
         Gap between rectangles.
-    params['exposure_box']: Boolean
-        If True, add rectangle around alignment markers,
+    params['exposure_circle']: Boolean
+        If True, add circle around alignment markers,
         used for marker freeing in aligned writes.
-    params['exposure_box_dx']: float
+    params['exposure_circle_dx']: float
         Distance between edge of alignment mark and
         edge of box.
-    params['exposure_box_layer']:
+    params['exposure_circle_layer']:
         Layer of exposure box.
     """
 
@@ -183,6 +183,8 @@ class CrossAligmentMark(SividdleDevice):
         SividdleDevice.__init__(self, name='aligment_mark')
 
         interim_alignment_mark = SividdleDevice('interim_alignment_mark')
+        
+        alignment_mark_size = params['d_large'] + params['d_small'] + params['sep']
 
         # Add four squares defining the alignment mark
         interim_alignment_mark << pg.rectangle(
@@ -220,30 +222,68 @@ class CrossAligmentMark(SividdleDevice):
                     params['d_small'] + params['sep']
                 ]
         )
-
+        
+        
+        
         # Add interim device to self, invert if choosen.
         if params['invert']:
-            self << interim_alignment_mark.invert(params['layer'])
+            self << interim_alignment_mark.invert(params['layer']) #.move((alignment_mark_size/2,alignment_mark_size/2))
         else:
-            self << interim_alignment_mark
+            self << interim_alignment_mark #.move((alignment_mark_size/2,alignment_mark_size/2))
 
         # Center device
         # Shift center of bounding box to origin
-        self.center = [0, 0]
-        # Make marker clear window.
-        if params['exposure_box']:
-            exposure_box_width = self.xsize \
-                + 2 * params['exposure_box_dx']
+        self.center = [alignment_mark_size/2,alignment_mark_size/2] #[0, 0]
+        
+        
+#         # Make marker clear window.
+#         if params['exposure_box']:
+#             exposure_box_width = self.xsize \
+#                 + 2 * params['exposure_box_dx']
 
-            # exposure box is really a circle b/c corners make cracks
-            exposure_box = gdspy.Round(
-                (0, 0),
-                [exposure_box_width * 0.5, exposure_box_width * 0.5],
-                tolerance=1e-4,
-                layer=params['exposure_box_layer']
-            )
+#             # exposure box is really a circle b/c corners make cracks
+#             exposure_box = gdspy.Round(
+#                 (0, 0),
+#                 [exposure_box_width * 0.5, exposure_box_width * 0.5],
+#                 tolerance=1e-4,
+#                 layer=params['exposure_box_layer']
+#             )
             
-            self.add(exposure_box)
+#             self.add(exposure_box)
+
+#             # Add dot at alignment point
+#             if params['make_dot']:
+#                 dot = pg.rectangle(
+#                     size=(params['dot_size'], params['dot_size']),
+#                     layer=params['dot_layer']
+#                 )
+#                 dot.move(
+#                     (
+#                         -params['dot_size'] * 0.5,
+#                         - params['dot_size'] * 0.5
+#                     )
+#                 )
+
+#                 self << dot
+
+        # Make exposure circles.
+        if params['exposure_circle']:
+            exposure_circle_radius = self.xsize/2 \
+                + params['exposure_circle_dx']
+            exposure_circle = pg.circle(
+                radius=exposure_circle_radius,
+                layer=params['exposure_circle_layer']
+            )
+            self << exposure_circle.move(
+                (
+                    self.xsize * 0.5, #self.xsize * 0.5 - exposure_circle.xsize * 0.5,
+                    self.ysize * 0.5 #self.ysize * 0.5 - exposure_circle.ysize * 0.5,
+                )
+            )
+
+            # Center device
+            # Shift center of bounding box to origin
+            self.center = [0, 0]
 
             # Add dot at alignment point
             if params['make_dot']:
@@ -259,6 +299,7 @@ class CrossAligmentMark(SividdleDevice):
                 )
 
                 self << dot
+
 
     def record_dot_position(self, textlayer):
         """Read center position and record it in layer."""
