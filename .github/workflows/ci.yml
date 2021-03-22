@@ -1,7 +1,14 @@
 name: Continuous Integration
 
-on: [push]
 
+on: 
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+        
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -10,7 +17,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
-        python-version: 3.7.6
+        python-version: 3.8
     - name: Install dependencies
       run: |
         # Dependencies for pycopg2
@@ -27,4 +34,34 @@ jobs:
       run: |
         pip install -r ci-requirements.txt
         tox -e flake8lint
+
+# name: Continuous Integration
+
+# on: [push]
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     steps:
+#     - uses: actions/checkout@v1
+#     - name: Set up Python
+#       uses: actions/setup-python@v1
+#       with:
+#         python-version: 3.7.6
+#     - name: Install dependencies
+#       run: |
+#         # Dependencies for pycopg2
+#         DEBIAN_FRONTEND=noninteractive sudo apt-get install -y libpq-dev
+#         # Python dependencies
+#         python -m pip install --upgrade pip
+#         # Unnecessary for now, as lint runs in tox
+#         # pip install -r requirements.txt
+#     - name: Pytest example code
+#       run: |
+#         pip install -r ci-requirements.txt
+#         tox -e pytest
+#     - name: Lint with flake8
+#       run: |
+#         pip install -r ci-requirements.txt
+#         tox -e flake8lint
 
