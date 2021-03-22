@@ -51,7 +51,7 @@ class SividdleDevice(Device):
             Array containing padding of bounding box used to substract device
             [left, right, top, bottom]
         """
-        bounding_box = Device('interim_bounding_box')
+        bounding_box = Device('interim_bounding_box') 
 
         if padding is None:
             padding = [0, 0, 0, 0]
