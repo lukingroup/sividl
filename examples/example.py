@@ -159,7 +159,7 @@ def run_example():
     write_field << image
 
     # Export as GDS file.
-    write_field.write_gds('example.gds')     
+    write_field.write_gds('example.gds')
 
 
 if __name__ == "__main__":
