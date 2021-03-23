@@ -439,7 +439,7 @@ class Taper(SividdleDevice):
         )
 
 
-class TaperedCoupler_wSupport(SividdleDevice):
+class TaperedCouplerWSupport(SividdleDevice):
     """Device describing a tapering section of a waveguide with a support.
 
     The tapering section of a waveguide is combined with a
@@ -485,8 +485,8 @@ class TaperedCoupler_wSupport(SividdleDevice):
             layer=layer
         )
 
-        taperSlope = (dy_min - dy_max) / (2 * length)
-        beamOverlap_x = (beam_width / 2 - dy_max / 2) / taperSlope
+        taperlope = (dy_min - dy_max) / (2 * length)
+        beamOverlap_x = (beam_width / 2 - dy_max / 2) / taperlope
 
         self.add_polygon(
             [
@@ -679,10 +679,8 @@ class TaperedSupport(SividdleDevice):
 
 class WaveGuide(SividdleDevice):
     """Device describing a rectangular waveguide.
-
-    This device will hace two ports associated with the axis defined
+    This device will have two ports associated with the axis defined
     by the 'height' dimension, which are named ''wgport1' and 'wgport2'.
-
     Parameters
     ----------
     layer: int
@@ -691,135 +689,54 @@ class WaveGuide(SividdleDevice):
         length of waveguide.
     height: float
         Height of waveguide.
-    slab_style: boolean
-        True if the waveguide is "slab style", i.e. if it is defined
-        by two windows around it rather than by a single rectangle
-    window_width: float
-        Used if slab_style is true. Defines width of windows around waveguide
-    photonic_crystal: boolean
-        True if there are holes in the waveguide
+    photonic_cristal_params: TBD
     photonic_crystal_params
     """
 
-    def __init__(self, params):
+    def __init__(self, layer, length, height, photonic_crystal_params=None):
 
         SividdleDevice.__init__(self, name='waveguide')
 
-#         self.add_polygon(
-#             [(0, 0), (length, 0), (length, height), (0, height)],
-#             layer=layer
-#         )
-#         self.add_port(
-#             name='wgport1',
-#             midpoint=[0, height / 2],
-#             width=height,
-#             orientation=180
-#         )
+        self.add_polygon(
+            [(0, 0), (length, 0), (length, height), (0, height)],
+            layer=layer
+        )
+        self.add_port(
+            name='wgport1',
+            midpoint=[0, height / 2],
+            width=height,
+            orientation=180
+        )
 
-#         self.add_port(
-#             name='wgport2',
-#             midpoint=[length, height / 2],
-#             width=height,
-#             orientation=0
-#         )
-
-        # retrieve parameters
-        layer = params['layer']
-        length = params['length']
-        height = params['height']
-        phc = params['photonic_crystal']
-        if 'slab_style' in params:
-            slab_style = params['slab_style']
-        else:
-            slab_style = False
-
-        if slab_style:
-            window_width = params['window_width']
-            self.add_polygon(
-                [(0, 0), (length, 0), (length, window_width),
-                 (0, window_width)], layer=layer
-            )
-
-            self.add_polygon(
-                [(0, -height), (length, -height),
-                 (length, -height - window_width),
-                 (0, -height - window_width)], layer=layer
-            )
-#             upper_window.add_port(
-#                 name='wgport1',
-#                 midpoint=[0, window_width / 2],
-#                 width=window_width,
-#                 orientation=180
-#             )
-#             self << upper_window.move(0,10)
-        else:
-            self.add_polygon(
-                [(0, 0), (length, 0), (length, height), (0, height)],
-                layer=layer
-            )
-
-            self.add_port(
-                name='wgport1',
-                midpoint=[0, height / 2],
-                width=height,
-                orientation=180
-            )
-
-            self.add_port(
-                name='wgport2',
-                midpoint=[length, height / 2],
-                width=height,
-                orientation=0
-            )
+        self.add_port(
+            name='wgport2',
+            midpoint=[length, height / 2],
+            width=height,
+            orientation=0
+        )
 
         # Add photonic crytstal
-        if phc:
+        if photonic_crystal_params is not None:
 
             holes = AdiabaticTaperedEllipseArray(
-                params['holes_layer'],
-                params['hx_init'],
-                params['hy_init'],
-                params['hy_final'],
-                params['a_const'],
-                int(params['num_taper']),
-                int(params['num_cells']),
-                both=params['both'],
+                photonic_crystal_params['holes_layer'],
+                photonic_crystal_params['hx_init'],
+                photonic_crystal_params['hy_init'],
+                photonic_crystal_params['hy_final'],
+                photonic_crystal_params['a_const'],
+                photonic_crystal_params['num_taper'],
+                photonic_crystal_params['num_cells'],
+                both=photonic_crystal_params['both'],
                 flip=True
             )
 
             # wg
-            dy_holes = self.ysize * 0.5
-            if slab_style:
-                dy_holes = -height / 2
             self << holes.move(
                 (
-                    self.xsize * 0.5 + params['dx_holes'],
-                    dy_holes  # self.ysize * 0.5
+                    holes.xsize * 0.5 + photonic_crystal_params['dx_holes'],
+                    self.ysize * 0.5
                 )
             )
-
-#         # Add photonic crytstal
-#         if photonic_crystal_params is not None:
-
-#             holes = AdiabaticTaperedEllipseArray(
-#                 photonic_crystal_params['holes_layer'],
-#                 photonic_crystal_params['hx_init'],
-#                 photonic_crystal_params['hy_init'],
-#                 photonic_crystal_params['hy_final'],
-#                 photonic_crystal_params['a_const'],
-#                 photonic_crystal_params['num_taper'],
-#                 photonic_crystal_params['num_cells'],
-#                 both=photonic_crystal_params['both'],
-#                 flip=True
-#             )
-
-#             # wg
-#             self << holes.move(
-#                 (
-#                     holes.xsize * 0.5 + photonic_crystal_params['dx_holes'],
-#                     self.ysize * 0.5
-#                 )
-#             )
 
         # Store Layer
         self.layer = layer
@@ -827,7 +744,6 @@ class WaveGuide(SividdleDevice):
     def add_anchors(self, dx_anchor, width_anchor,
                     widthmax_anchor, length_anchor, which):
         """Add anchors to the waveguide.
-
         Parameters
         ----------
         dx_anchor: float
@@ -886,6 +802,182 @@ class WaveGuide(SividdleDevice):
         )
 
         # Addd to new device
+        if 1 in which:
+            anchor_1 = self << anchor
+            anchor_1.connect(
+                port='tpport1',
+                destination=self.ports['anchorport1']
+            )
+            self.add_port(
+                port=anchor_1.ports['tpport2'],
+                name='extanchorport1'
+            )
+        if 2 in which:
+            anchor_2 = self << anchor
+            anchor_2.connect(
+                port='tpport1',
+                destination=self.ports['anchorport2']
+            )
+            self.add_port(
+                port=anchor_2.ports['tpport2'],
+                name='extanchorport2'
+            )
+        if 3 in which:
+            anchor_3 = self << anchor
+            anchor_3.connect(
+                port='tpport1',
+                destination=self.ports['anchorport3']
+            )
+            self.add_port(
+                port=anchor_3.ports['tpport2'],
+                name='extanchorport3'
+            )
+        if 4 in which:
+            anchor_4 = self << anchor
+            anchor_4.connect(
+                port='tpport1',
+                destination=self.ports['anchorport4']
+            )
+            self.add_port(
+                port=anchor_4.ports['tpport2'],
+                name='extanchorport4'
+            )
+
+
+class SlabStyleWaveguide(SividdleDevice):
+    """Device describing a slab-style rectangular waveguide.
+
+    This device will hace two ports associated with the axis defined
+    by the 'height' dimension, which are named ''wgport1' and 'wgport2'.
+
+    Parameters
+    ----------
+    layer: int
+        Layer of waveguide.
+    length: float
+        length of waveguide.
+    height: float
+        Height of waveguide.
+    window_width: float
+        Defines width of windows around waveguide
+    photonic_crystal: boolean
+        True if there are holes in the waveguide
+    photonic_crystal_params
+    """
+
+    def __init__(self, params):
+
+        SividdleDevice.__init__(self, name='ss_waveguide')
+
+        # retrieve parameters
+        layer = params['layer']
+        length = params['length']
+        height = params['height']
+        phc = params['photonic_crystal']
+        slab_style = params['slab_style']
+
+        window_width = params['window_width']
+        self.add_polygon(
+            [(0, 0), (length, 0), (length, window_width),
+                (0, window_width)], layer=layer
+        )
+
+        self.add_polygon(
+            [(0, -height), (length, -height),
+                (length, -height - window_width),
+                (0, -height - window_width)], layer=layer
+        )
+
+        if phc:
+
+            holes = AdiabaticTaperedEllipseArray(
+                params['holes_layer'],
+                params['hx_init'],
+                params['hy_init'],
+                params['hy_final'],
+                params['a_const'],
+                int(params['num_taper']),
+                int(params['num_cells']),
+                both=params['both'],
+                flip=True
+            )
+
+            # wg
+            dy_holes = self.ysize * 0.5
+            if slab_style:
+                dy_holes = -height / 2
+            self << holes.move(
+                (
+                    self.xsize * 0.5 + params['dx_holes'],
+                    dy_holes  # self.ysize * 0.5
+                )
+            )
+
+        # Store Layer
+        self.layer = layer
+
+    def add_anchors(self, dx_anchor, width_anchor,
+                    widthmax_anchor, length_anchor, which):
+        """Add anchors to the waveguide.
+
+        Parameters
+        ----------
+        dx_anchor: float
+            Distance of anchoring point to end of waveguide.
+        width_anchor: float
+            Width of anchor at anchoring point.
+        widthmax_anchor: float
+            Width of anchor opposite of anchoring point.
+        length_anchor: float
+            Length of anchor.
+        which: list
+            Which anchor to add, labelled:
+            1 ..... 2
+            3 ..... 4
+            Default: All anchors.
+        """
+        if which is None:
+            which = [1, 2, 3, 4]
+
+        # add ports
+        self.add_port(
+            name='anchorport1',
+            midpoint=[dx_anchor, self.ysize],
+            width=width_anchor,
+            orientation=90
+        )
+
+        self.add_port(
+            name='anchorport2',
+            midpoint=[self.xsize - dx_anchor, self.ysize],
+            width=width_anchor,
+            orientation=90
+        )
+
+        self.add_port(
+            name='anchorport3',
+            midpoint=[dx_anchor, 0],
+            width=width_anchor,
+            orientation=-90
+        )
+
+        self.add_port(
+            name='anchorport4',
+            midpoint=[self.xsize - dx_anchor, 0],
+            width=width_anchor,
+            orientation=-90
+        )
+
+        # add anchors
+        anchor = Taper(
+            self.layer,
+            'anchor',
+            length_anchor,
+            width_anchor,
+            widthmax_anchor
+        )
+
+        # Add to new device
         if 1 in which:
             anchor_1 = self << anchor
             anchor_1.connect(
