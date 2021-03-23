@@ -53,15 +53,14 @@ def run_example():
     write_field = sivp.WriteFieldCrossAligmentMark(writefield_parameters)
 
     waveguide_width = 0.493
-    #scale the design width for fab
-    waveguide_width_HSQ = 1.1*waveguide_width
-    
-    nominalResonance = 0.7377
-    targetResonance = 0.737
-    resonance_scaling = targetResonance/nominalResonance
+    # Scale the design width for fab
+    waveguide_width_hsq = 1.1 * waveguide_width
 
+    nominal_resonance = 0.7377
+    target_resonance = 0.737
+    resonance_scaling = target_resonance / nominal_resonance
 
-    PCC_params = {
+    pcc_params = {
         'layer'               : 2,
         'aL'                  : 0.2717,
         'aR'                  : 0.2502,
@@ -80,19 +79,19 @@ def run_example():
         'resonance_wavelength': 0.737
     }
 
-    DT_params = {
+    double_taper_params = {
         'cavity_length'         : 15.0,
         'layer_wg'              : 1,
         'name'                  : "DT",
         'tapered_coupler_length': 17.5,
         'tapered_support_length': 10,
-        'tapered_coupler_minWidth':0.11,
-        'tapered_support_width' : 1.4*waveguide_width_HSQ,
+        'tapered_coupler_minWidth': 0.11,
+        'tapered_support_width' : 1.4 * waveguide_width_hsq,
         'waveguide_spacer_length': 6,
-        'width'               : waveguide_width_HSQ
+        'width'               : waveguide_width_hsq
     }
 
-    DT_wSupport_params = {
+    double_taper_w_support_params = {
         'cavity_length'         : 15.0,
         'layer_wg'              : 1,
         'name'                  : "DT_wSupport",
@@ -102,68 +101,72 @@ def run_example():
         'tapered_coupler_support_beam_length' : 6.0,
         'tapered_coupler_support_beam_width'  : 0.33,
         'tapered_coupler_support_roof_height' : 1.5,
-        'tapered_coupler_support_house_width': 1.1,
+        'tapered_coupler_support_house_width' : 1.1,
         'tapered_coupler_support_house_length': 1.5,
-        'tapered_support_width' : 1.4*waveguide_width_HSQ,
+        'tapered_support_width' : 1.4 * waveguide_width_hsq,
         'waveguide_spacer_length': 6,
-        'width'               : waveguide_width_HSQ
+        'width'               : waveguide_width_hsq
     }
-
 
     num_cols = 5
     num_rows = 15
     wf_width = writefield_parameters['bounding_box_size']
-    deviceLength = 2*DT_params['tapered_coupler_length']+\
-                    4*DT_params['tapered_support_length']+\
-                        4*DT_params['waveguide_spacer_length']+\
-                            DT_params['cavity_length']
-    print(deviceLength)
+    device_length = (2 * double_taper_params['tapered_coupler_length']
+                     + 4 * double_taper_params['tapered_support_length']
+                     + 4 * double_taper_params['waveguide_spacer_length']
+                     + double_taper_params['cavity_length'])
+    print(device_length)
     margin_y = 30.0
-    margin_large = deviceLength/2+10.0    
+    margin_large = device_length / 2 + 10.0
     offset = 6.0
-    photonic_scaling = np.linspace(0.965,1.035,num_cols)
-    fab_scaling = resonance_scaling*photonic_scaling
+    photonic_scaling = np.linspace(0.965, 1.035, num_cols)
+    fab_scaling = resonance_scaling * photonic_scaling
     print(fab_scaling)
-    for i,x in enumerate(np.linspace(-wf_width/2+margin_large,wf_width/2-margin_large,num_cols)):
+    col_coords = np.linspace(
+        -wf_width / 2 + margin_large,
+        wf_width / 2 - margin_large,
+        num_cols)
+    for i, x in enumerate(col_coords):
         text_params = {
-            'name'                  : 'label_{:1.5}'.format(photonic_scaling[i]),
-            'text'                  : '{:1.5}'.format(photonic_scaling[i]),
-            'style'                 : 'normal',
-            'fontsize'              : 5,
-            'layer'                 : 1
+            'name'     : 'label_{:1.5}'.format(photonic_scaling[i]),
+            'text'     : '{:1.5}'.format(photonic_scaling[i]),
+            'style'    : 'normal',
+            'fontsize' : 5,
+            'layer'    : 1
         }
-        
+
         text_label = sivp.RenderedText(text_params)
         label_top_ref = write_field.add_ref(text_label)
-        label_top_ref.move([x,wf_width/2-margin_y/2])
+        label_top_ref.move([x, wf_width / 2 - margin_y / 2])
         label_bot_ref = write_field.add_ref(text_label)
-        label_bot_ref.move([x,-wf_width/2+margin_y/2])
-    
-        # x += (i>num_cols/2)*margin_small
-        v0p4p2_dev0 = sivp.OvercoupledAirholeDevice_v0p4p2(PCC_params, DT_params, fab_scaling[i])
-        v0p4p2_dev1 = sivp.OvercoupledAirholeDevice_wSupport_v0p4p2(PCC_params, DT_wSupport_params, fab_scaling[i])
+        label_bot_ref.move([x, -wf_width / 2 + margin_y / 2])
 
-        implantWindow_dev = sivp.ImplantationWindow(0.4*photonic_scaling[i],0.075*photonic_scaling[i],10)
-        implantWindow_single_dev = sivp.ImplantationWindow(0.075*photonic_scaling[i],0.075*photonic_scaling[i],10)
+        v0p4p2_dev0 = sivp.OvercoupledAirholeDevice_v0p4p2(
+            pcc_params, double_taper_params, fab_scaling[i])
+        v0p4p2_dev1 = sivp.OvercoupledAirholeDevice_wSupport_v0p4p2(
+            pcc_params, double_taper_w_support_params, fab_scaling[i])
 
-        # if(i==int(num_cols/2)):
-        #     pass
-        # else:
-        #     for y in np.linspace(wf_width/2-margin_small-offset*i,-wf_width/2+margin_small+offset*(num_cols-i),num_rows):
-        #         dev_ref = write_field.add_ref(v0p4p2_dev)
-        #         dev_ref.move([x,y])
-        for j,y in enumerate(np.linspace(wf_width/2-margin_y-offset*i,-wf_width/2+margin_y+offset*(num_cols-i-1),num_rows)):
-            if(j%2==0):
+        implant_window_dev = sivp.ImplantationWindow(
+            0.4 * photonic_scaling[i], 0.075 * photonic_scaling[i], 10)
+        implant_window_single_dev = sivp.ImplantationWindow(
+            0.075 * photonic_scaling[i], 0.075 * photonic_scaling[i], 10)
+
+        row_coords = np.linspace(
+            wf_width / 2 - margin_y - offset * i,
+            -wf_width / 2 + margin_y + offset * (num_cols - i - 1),
+            num_rows)
+        for j, y in enumerate(row_coords):
+            if(j % 2 == 0):
                 dev_ref = write_field.add_ref(v0p4p2_dev0)
             else:
                 dev_ref = write_field.add_ref(v0p4p2_dev1)
-            dev_ref.move([x,y])        
-            if(j==3 or j == 7):
-                aperture_ref = write_field.add_ref(implantWindow_single_dev)
-                aperture_ref.move([x+0.624*photonic_scaling[i],y])
+            dev_ref.move([x, y])
+            if(j == 3 or j == 7):
+                aperture_ref = write_field.add_ref(implant_window_single_dev)
+                aperture_ref.move([x + 0.624 * photonic_scaling[i], y])
             else:
-                aperture_ref = write_field.add_ref(implantWindow_dev)
-                aperture_ref.move([x+0.736*photonic_scaling[i],y])
+                aperture_ref = write_field.add_ref(implant_window_dev)
+                aperture_ref.move([x + 0.736 * photonic_scaling[i], y])
 
     # Add Arrow pointing to top right alignment marker
     rarrow_params = {
