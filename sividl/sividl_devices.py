@@ -593,12 +593,12 @@ class TaperedSupport(SividdleDevice):
 
         # Add a single "section" to each of the cross-sections
         w_taper1_conc.add(
-            width=self.taperedWidth_1_conc, offset=0,
+            width=self.tapered_width_1_conc, offset=0,
             layer=params['layer'],
             ports=('in_taper1_conc', 'out_taper1_conc')
         )
         w_taper1_conv.add(
-            width=self.taperedWidth_1_conv, offset=0,
+            width=self.tapered_width_1_conv, offset=0,
             layer=params['layer'],
             ports=('in_taper1_conv', 'out_taper1_conv')
         )
@@ -608,12 +608,12 @@ class TaperedSupport(SividdleDevice):
             ports=('in_center', 'out_center')
         )
         w_taper2_conv.add(
-            width=self.taperedWidth_2_conv, offset=0,
+            width=self.tapered_width_2_conv, offset=0,
             layer=params['layer'],
             ports=('in_taper2_conv', 'out_taper2_conv')
         )
         w_taper2_conc.add(
-            width=self.taperedWidth_2_conc,
+            width=self.tapered_width_2_conc,
             offset=0, layer=params['layer'],
             ports=('in_taper2_conc', 'out_taper2_conc')
         )

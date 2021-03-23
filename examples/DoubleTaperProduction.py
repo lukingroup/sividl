@@ -141,9 +141,9 @@ def run_example():
         label_bot_ref = write_field.add_ref(text_label)
         label_bot_ref.move([x, -wf_width / 2 + margin_y / 2])
 
-        v0p4p2_dev0 = sivp.OvercoupledAirholeDevice_v0p4p2(
+        v0p4p2_dev0 = sivp.OvercoupledAirholeDevicev0p4p2(
             pcc_params, double_taper_params, fab_scaling[i])
-        v0p4p2_dev1 = sivp.OvercoupledAirholeDevice_wSupport_v0p4p2(
+        v0p4p2_dev1 = sivp.OvercoupledAirholeDeviceWSupportv0p4p2(
             pcc_params, double_taper_w_support_params, fab_scaling[i])
 
         implant_window_dev = sivp.ImplantationWindow(
