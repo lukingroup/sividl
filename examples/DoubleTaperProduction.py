@@ -196,7 +196,7 @@ def run_example():
     larrow_top_ref.move([-200, 235])
     larrow_bot_ref.move([-200, -235])
 
-    write_field.write_gds('Ovrcpld_v0p4p2_Implant_555.gds')
+    write_field.write_gds('Ovrcpld_v0p4p2_Implant.gds')
 
 
 if __name__ == "__main__":
