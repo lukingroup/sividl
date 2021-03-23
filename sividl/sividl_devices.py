@@ -23,9 +23,9 @@ import string
 import gdspy
 from matplotlib.font_manager import FontProperties
 import numpy as np
-from phidl import Device, Path, CrossSection
-import phidl.path as pp
+from phidl import CrossSection, Device
 import phidl.geometry as pg
+import phidl.path as pp
 from sividl.sividl_utils import image_to_binary_bitmap, render_text
 
 
@@ -242,7 +242,7 @@ class CrossAligmentMark(SividdleDevice):
                 tolerance=1e-4,
                 layer=params['exposure_box_layer']
             )
-            
+
             self.add(exposure_box)
 
             # Add dot at alignment point
@@ -264,7 +264,6 @@ class CrossAligmentMark(SividdleDevice):
         """Read center position and record it in layer."""
         center = (self.x, self.y)
         self.add_label(
-#             text='Alignment mark center = ({:.2f}, {:.3f}) '
             text='Alignment mark center = ({:.2f}, {:.3f}) '.format(
                 center[0],
                 center[1]
@@ -330,6 +329,7 @@ class WriteFieldCrossAligmentMark(SividdleDevice):
                 alignment_mark.record_dot_position(params['text_label_layer'])
 
             self << alignment_mark
+
 
 class EtchSlap(SividdleDevice):
     """Generate two etching strip for isotropic etching tests.
@@ -438,12 +438,14 @@ class Taper(SividdleDevice):
             orientation=0
         )
 
-class TaperedCoupler_wSupport(SividdleDevice):
-    """Device describing a tapering section of a waveguide
-    combined with a house-pentagon to support the tip.
 
-    This device will have two ports associated with its
-     left and right ends named 'tpport1' and 'tpport2'.
+class TaperedCoupler_wSupport(SividdleDevice):
+    """Device describing a tapering section of a waveguide with a support.
+
+    The tapering section of a waveguide is combined with a
+    house-pentagon to support the tip. This device will have
+    two ports associated with its left and right ends named
+    'tpport1' and 'tpport2'.
 
     Parameters
     ----------
@@ -468,30 +470,30 @@ class TaperedCoupler_wSupport(SividdleDevice):
 
     """
 
-    def __init__(self, layer, name, length, dy_min, dy_max, beam_length, 
-    beam_width, roof_height, house_width, house_length):
+    def __init__(self, layer, name, length, dy_min, dy_max, beam_length,
+                 beam_width, roof_height, house_width, house_length):
 
         SividdleDevice.__init__(self, name=name)
 
         self.add_polygon(
             [
-                (0, -dy_min/2),
-                (0, dy_min/2),
-                (length, dy_max/2),
-                (length, -dy_max/2)
+                (0, -dy_min / 2),
+                (0, dy_min / 2),
+                (length, dy_max / 2),
+                (length, -dy_max / 2)
             ],
             layer=layer
         )
 
-        taperSlope = (dy_min-dy_max)/(2*length)
-        beamOverlap_x = (beam_width/2 - dy_max/2)/taperSlope
+        taperSlope = (dy_min - dy_max) / (2 * length)
+        beamOverlap_x = (beam_width / 2 - dy_max / 2) / taperSlope
 
         self.add_polygon(
             [
-                (beamOverlap_x, -beam_width/2),
-                (beamOverlap_x, beam_width/2),
-                (-beam_length, beam_width/2),
-                (-beam_length, -beam_width/2)
+                (beamOverlap_x, -beam_width / 2),
+                (beamOverlap_x, beam_width / 2),
+                (-beam_length, beam_width / 2),
+                (-beam_length, -beam_width / 2)
             ],
             layer=layer
         )
@@ -499,10 +501,10 @@ class TaperedCoupler_wSupport(SividdleDevice):
         # add triangular transition to rectangular support
         self.add_polygon(
             [
-                (-beam_length, -beam_width/2),
-                (-beam_length, beam_width/2),
-                (-beam_length-roof_height, house_width/2),
-                (-beam_length-roof_height, -house_width/2)
+                (-beam_length, -beam_width / 2),
+                (-beam_length, beam_width / 2),
+                (-beam_length - roof_height, house_width / 2),
+                (-beam_length - roof_height, -house_width / 2)
             ],
             layer=layer
         )
@@ -510,17 +512,17 @@ class TaperedCoupler_wSupport(SividdleDevice):
         # add rectangular support
         self.add_polygon(
             [
-                (-beam_length-roof_height, -house_width/2),
-                (-beam_length-roof_height, house_width/2),
-                (-beam_length-roof_height-house_length, house_width/2),
-                (-beam_length-roof_height-house_length, -house_width/2)
+                (-beam_length - roof_height, -house_width / 2),
+                (-beam_length - roof_height, house_width / 2),
+                (-beam_length - roof_height - house_length, house_width / 2),
+                (-beam_length - roof_height - house_length, -house_width / 2)
             ],
             layer=layer
         )
 
         self.add_port(
             name='tpport1',
-            midpoint=[-beam_length-roof_height-house_length, 0],
+            midpoint=[-beam_length - roof_height - house_length, 0],
             width=house_width,
             orientation=180
         )
@@ -532,17 +534,19 @@ class TaperedCoupler_wSupport(SividdleDevice):
             orientation=0
         )
 
+
 class TaperedSupport(SividdleDevice):
-    """Device describing a tapered support section of a 
-    waveguide, in the style of Mike and Bart. There are several
-    segments in a tapered support. In addition to the straight 
-    section at the support, the tapering sections can be broken 
-    down into 2 parts. That is, there is a concave section 
+    """Device describing a tapered support section of a waveguide.
+
+    This tapered support is in the style of Mike and Bart. There
+    are several segments in a tapered support. In addition to the straight
+    section at the support, the tapering sections can be broken
+    down into 2 parts. That is, there is a concave section
     followed by a convex section as you go from waveguide width
     to support width.
 
     This device has two ports associated left and right ends
- 
+
     Parameters
     ----------
     params: dict
@@ -555,7 +559,6 @@ class TaperedSupport(SividdleDevice):
         straight length at center of the tapered support
     params['taper_length_2']: float
         tapered length on the RHS of the tapered support
-    
     params['width_1']: float
         waveguide width at LHS of the tapered support
     params['width_center']: float
@@ -567,19 +570,20 @@ class TaperedSupport(SividdleDevice):
     def __init__(self, params):
 
         SividdleDevice.__init__(self, name=params['name'])
-        
+
         self.taper_length_1 = params['taper_length_1']
         self.taper_length_2 = params['taper_length_2']
-        self.width_1 =  params['width_1']
+        self.width_1 = params['width_1']
         self.width_center = params['width_center']
-        self.width_2 =  params['width_2']
+        self.width_2 = params['width_2']
 
-        straight_center_path = pp.straight(length = params['straight_length_center'])
+        straight_center_path = pp.straight(
+            length=params['straight_length_center'])
 
-        taper_1_conc_path = pp.straight(length = params['taper_length_1']/2.0)
-        taper_1_conv_path = pp.straight(length = params['taper_length_1']/2.0)
-        taper_2_conc_path = pp.straight(length = params['taper_length_2']/2.0)
-        taper_2_conv_path = pp.straight(length = params['taper_length_2']/2.0)
+        taper_1_conc_path = pp.straight(length=params['taper_length_1'] / 2.0)
+        taper_1_conv_path = pp.straight(length=params['taper_length_1'] / 2.0)
+        taper_2_conc_path = pp.straight(length=params['taper_length_2'] / 2.0)
+        taper_2_conv_path = pp.straight(length=params['taper_length_2'] / 2.0)
 
         # Create blank CrossSection objects to be used for each path
         w_taper1_conc = CrossSection()
@@ -589,24 +593,48 @@ class TaperedSupport(SividdleDevice):
         w_taper2_conv = CrossSection()
 
         # Add a single "section" to each of the cross-sections
-        w_taper1_conc.add(width = self.taperedWidth_1_conc, offset = 0, layer = params['layer'],
-            ports = ('in_taper1_conc','out_taper1_conc'))
-        w_taper1_conv.add(width = self.taperedWidth_1_conv, offset = 0, layer = params['layer'],
-            ports = ('in_taper1_conv','out_taper1_conv'))
-        w_center.add(width = params['width_center'], offset = 0, layer = params['layer'],
-            ports = ('in_center','out_center'))
-        w_taper2_conv.add(width = self.taperedWidth_2_conv, offset = 0, layer = params['layer'],
-            ports = ('in_taper2_conv','out_taper2_conv'))
-        w_taper2_conc.add(width = self.taperedWidth_2_conc, offset = 0, layer = params['layer'],
-            ports = ('in_taper2_conc','out_taper2_conc'))
-        
+        w_taper1_conc.add(
+            width=self.taperedWidth_1_conc, offset=0,
+            layer=params['layer'],
+            ports=('in_taper1_conc', 'out_taper1_conc')
+        )
+        w_taper1_conv.add(
+            width=self.taperedWidth_1_conv, offset=0,
+            layer=params['layer'],
+            ports=('in_taper1_conv', 'out_taper1_conv')
+        )
+        w_center.add(
+            width=params['width_center'], offset=0,
+            layer=params['layer'],
+            ports=('in_center', 'out_center')
+        )
+        w_taper2_conv.add(
+            width=self.taperedWidth_2_conv, offset=0,
+            layer=params['layer'],
+            ports=('in_taper2_conv', 'out_taper2_conv')
+        )
+        w_taper2_conc.add(
+            width=self.taperedWidth_2_conc,
+            offset=0, layer=params['layer'],
+            ports=('in_taper2_conc', 'out_taper2_conc')
+        )
 
         # Combine the Path and the CrossSection
-        taper_1_conc_dev = taper_1_conc_path.extrude(cross_section = w_taper1_conc)
-        taper_1_conv_dev = taper_1_conv_path.extrude(cross_section = w_taper1_conv)
-        straight_center_dev = straight_center_path.extrude(cross_section = w_center)
-        taper_2_conv_dev = taper_2_conv_path.extrude(cross_section = w_taper2_conv)
-        taper_2_conc_dev = taper_2_conc_path.extrude(cross_section = w_taper2_conc)
+        taper_1_conc_dev = taper_1_conc_path.extrude(
+            cross_section=w_taper1_conc
+        )
+        taper_1_conv_dev = taper_1_conv_path.extrude(
+            cross_section=w_taper1_conv
+        )
+        straight_center_dev = straight_center_path.extrude(
+            cross_section=w_center
+        )
+        taper_2_conv_dev = taper_2_conv_path.extrude(
+            cross_section=w_taper2_conv
+        )
+        taper_2_conc_dev = taper_2_conc_path.extrude(
+            cross_section=w_taper2_conc
+        )
 
         taper_1_conc_ref = self.add_ref(taper_1_conc_dev)
         taper_1_conv_ref = self.add_ref(taper_1_conv_dev)
@@ -614,31 +642,41 @@ class TaperedSupport(SividdleDevice):
         taper_2_conc_ref = self.add_ref(taper_2_conc_dev)
         taper_2_conv_ref = self.add_ref(taper_2_conv_dev)
 
-        taper_1_conv_ref.connect('in_taper1_conv',taper_1_conc_ref.ports['out_taper1_conc'])
-        straight_center_ref.connect('in_center',taper_1_conv_ref.ports['out_taper1_conv'])
-        taper_2_conv_ref.connect('in_taper2_conv',straight_center_ref.ports['out_center'])
-        taper_2_conc_ref.connect('in_taper2_conc',taper_2_conv_ref.ports['out_taper2_conv'])
-        
-        self.add_port(name='tpport1',port=taper_1_conc_ref.ports['in_taper1_conc'])
-        self.add_port(name='tpport2',port=taper_2_conc_ref.ports['out_taper2_conc'])
+        taper_1_conv_ref.connect('in_taper1_conv',
+                                 taper_1_conc_ref.ports['out_taper1_conc'])
+        straight_center_ref.connect('in_center',
+                                    taper_1_conv_ref.ports['out_taper1_conv'])
+        taper_2_conv_ref.connect('in_taper2_conv',
+                                 straight_center_ref.ports['out_center'])
+        taper_2_conc_ref.connect('in_taper2_conc',
+                                 taper_2_conv_ref.ports['out_taper2_conv'])
+
+        self.add_port(name='tpport1',
+                      port=taper_1_conc_ref.ports['in_taper1_conc'])
+        self.add_port(name='tpport2',
+                      port=taper_2_conc_ref.ports['out_taper2_conc'])
 
     def taperedWidth_1_conc(self, x):
-        taperedSupportWidth1 = self.width_1 + 0.5*(self.width_center-self.width_1)*(x)**2
+        taperedSupportWidth1 = self.width_1 + 0.5 * (
+            self.width_center - self.width_1) * (x)**2
         return taperedSupportWidth1
 
     def taperedWidth_1_conv(self, x):
-        taperedSupportWidth1 = self.width_center - 0.5*(self.width_center-self.width_1)*((x-1))**2
+        taperedSupportWidth1 = self.width_center - 0.5 * (
+            self.width_center - self.width_1) * ((x - 1))**2
         return taperedSupportWidth1
 
     def taperedWidth_2_conv(self, x):
-        taperedSupportWidth2 = self.width_center - 0.5*(self.width_center-self.width_2)*((x))**2
+        taperedSupportWidth2 = self.width_center - 0.5 * (
+            self.width_center - self.width_2) * ((x))**2
         return taperedSupportWidth2
 
     def taperedWidth_2_conc(self, x):
-        taperedSupportWidth2 = self.width_2 + 0.5*(self.width_center-self.width_2)*(x-1)**2
+        taperedSupportWidth2 = self.width_2 + 0.5 * (
+            self.width_center - self.width_2) * (x - 1)**2
         return taperedSupportWidth2
 
-    
+
 class WaveGuide(SividdleDevice):
     """Device describing a rectangular waveguide.
 
@@ -664,7 +702,6 @@ class WaveGuide(SividdleDevice):
     """
 
     def __init__(self, params):
-#     def __init__(self, layer, length, height, photonic_crystal_params=None):
 
         SividdleDevice.__init__(self, name='waveguide')
 
@@ -686,23 +723,27 @@ class WaveGuide(SividdleDevice):
 #             orientation=0
 #         )
 
-                # retrieve parameters
+        # retrieve parameters
         layer = params['layer']
         length = params['length']
         height = params['height']
-        phC = params['photonic_crystal']
-        slab_style = params['slab_style']
+        phc = params['photonic_crystal']
+        if 'slab_style' in params:
+            slab_style = params['slab_style']
+        else:
+            slab_style = False
 
         if slab_style:
             window_width = params['window_width']
             self.add_polygon(
-                [(0, 0), (length, 0), (length, window_width), (0, window_width)],
-                layer=layer
+                [(0, 0), (length, 0), (length, window_width),
+                 (0, window_width)], layer=layer
             )
-            
+
             self.add_polygon(
-                [(0, -height), (length, -height), (length, -height-window_width), (0, -height-window_width)],
-                layer=layer
+                [(0, -height), (length, -height),
+                 (length, -height - window_width),
+                 (0, -height - window_width)], layer=layer
             )
 #             upper_window.add_port(
 #                 name='wgport1',
@@ -716,7 +757,7 @@ class WaveGuide(SividdleDevice):
                 [(0, 0), (length, 0), (length, height), (0, height)],
                 layer=layer
             )
-            
+
             self.add_port(
                 name='wgport1',
                 midpoint=[0, height / 2],
@@ -732,7 +773,7 @@ class WaveGuide(SividdleDevice):
             )
 
         # Add photonic crytstal
-        if phC:
+        if phc:
 
             holes = AdiabaticTaperedEllipseArray(
                 params['holes_layer'],
@@ -749,14 +790,14 @@ class WaveGuide(SividdleDevice):
             # wg
             dy_holes = self.ysize * 0.5
             if slab_style:
-                dy_holes = -height/2
+                dy_holes = -height / 2
             self << holes.move(
                 (
-                    self.xsize * 0.5 + params['dx_holes'], #holes.xsize * 0.5 + params['dx_holes'],
-                    dy_holes #self.ysize * 0.5
+                    self.xsize * 0.5 + params['dx_holes'],
+                    dy_holes  # self.ysize * 0.5
                 )
             )
-        
+
 #         # Add photonic crytstal
 #         if photonic_crystal_params is not None:
 
