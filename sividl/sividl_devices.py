@@ -1,4 +1,3 @@
-
 # =============================================================================='
 # sividl.devices
 # ==============================================================================
@@ -679,6 +678,7 @@ class TaperedSupport(SividdleDevice):
 
 class WaveGuide(SividdleDevice):
     """Device describing a rectangular waveguide.
+
     This device will have two ports associated with the axis defined
     by the 'height' dimension, which are named ''wgport1' and 'wgport2'.
     Parameters
@@ -744,6 +744,7 @@ class WaveGuide(SividdleDevice):
     def add_anchors(self, dx_anchor, width_anchor,
                     widthmax_anchor, length_anchor, which):
         """Add anchors to the waveguide.
+
         Parameters
         ----------
         dx_anchor: float
@@ -1137,7 +1138,8 @@ class TaperedWaveGuide(SividdleDevice):
                 ]
             )
 
-        # The below doesn't work unless you have defined this parameter, which one does not generically do.
+        # The below doesn't work unless you have defined this parameter,
+        # which one does not generically do.
         # if params['add_taper_marker']:
         #     self.add_arrow_markers()
         #     # Compensate for the arrows in assignment of center.
@@ -1235,9 +1237,9 @@ class EllipseArray(SividdleDevice):
         assert len(hy_array) is len(hx_array), \
             "Please provide arrays of equal length"
 
-        assert len(a_consts_array) is (len(hx_array)-1), \
-            "Please provide a lattice constant array with one fewer"+\
-                " element than the hole arrays."
+        assert len(a_consts_array) is (len(hx_array) - 1), \
+            "Please provide a lattice constant array with one fewer \
+             element than the hole arrays."
 
         SividdleDevice.__init__(self, name='EllipseArray')
 
@@ -1333,7 +1335,9 @@ class AdiabaticTaperedEllipseArray(SividdleDevice):
 
 
 class DoubleTaperedDevice(SividdleDevice):
-    """A device comprised of waveguide tapers on both sides,
+    """Makes a double-tapered device.
+
+    A device comprised of waveguide tapers on both sides,
     two quadratic tapered supports on either side of the cavity,
     and a photonic crystal cavity (PCC) zone at the center. That is,
     the PCC is defined by the following parameters and is allowed
@@ -1360,17 +1364,16 @@ class DoubleTaperedDevice(SividdleDevice):
         tapered support width. Typically, this is 1.4*width
     params['waveguide_spacer_length']: float
         length of the spacers that separate the tapered coupler
-        from the tapered support and that space out the two 
+        from the tapered support and that space out the two
         tapered supports on either side.
     params['width']: float
         cavity and waveguide width
     """
 
-
     def __init__(self, params):
 
         SividdleDevice.__init__(self, name=params['name'])
-        
+
         self.layer_wg = params['layer_wg']
         self.tapered_coupler_length = params['tapered_coupler_length']
         self.waveguide_spacer_length = params['waveguide_spacer_length']
@@ -1381,41 +1384,42 @@ class DoubleTaperedDevice(SividdleDevice):
         self.tapered_support_width = params['tapered_support_width']
 
         self.tapered_support_params = {
-            'name'           : "taperedSupport",
+            'name'           : "tapered_support",
             'layer'          : self.layer_wg,
-            'taper_length_1' : self.tapered_support_length/2,
+            'taper_length_1' : self.tapered_support_length / 2,
             'straight_length_center': 0,
-            'taper_length_2' : self.tapered_support_length/2,
+            'taper_length_2' : self.tapered_support_length / 2,
             'width_1'        : self.width,
             'width_center'   : self.tapered_support_width,
             'width_2'        : self.width
         }
 
         # Create paths to define segments of device
-        spacer_path = pp.straight(length = self.waveguide_spacer_length)
-        cavity_path = pp.straight(length = self.cavity_length)
+        spacer_path = pp.straight(length=self.waveguide_spacer_length)
+        cavity_path = pp.straight(length=self.cavity_length)
 
         # Create blank CrossSection objects to be used for each path
         spacer_xs = CrossSection()
         cavity_xs = CrossSection()
 
         # Add a section to each CrossSection to define the width for extrusion
-        spacer_xs.add(width = self.width, offset = 0, layer = self.layer_wg,
-            ports = ('in_spacer','out_spacer'))
-        cavity_xs.add(width = self.width, offset = 0, layer = self.layer_wg,
-            ports = ('in_cavity','out_cavity'))
-        
+        spacer_xs.add(width=self.width, offset=0, layer=self.layer_wg,
+                      ports=('in_spacer', 'out_spacer'))
+        cavity_xs.add(width=self.width, offset=0, layer=self.layer_wg,
+                      ports=('in_cavity', 'out_cavity'))
+
         # Combine the Paths and the CrossSections to make Devices
-        spacer_dev = spacer_path.extrude(cross_section = spacer_xs)
-        cavity_dev = cavity_path.extrude(cross_section = cavity_xs)
+        spacer_dev = spacer_path.extrude(cross_section=spacer_xs)
+        cavity_dev = cavity_path.extrude(cross_section=cavity_xs)
 
         # Create TaperedSupport Device
-        taperedSupport = TaperedSupport(self.tapered_support_params)
+        tapered_support = TaperedSupport(self.tapered_support_params)
 
         # Create Taper Device for tapered couplers
-        taperedCoupler = Taper(layer = self.layer_wg,name = "TaperedCoupler",
-                length = self.tapered_coupler_length,
-                dy_min = self.tapered_coupler_minWidth, dy_max=self.width)
+        tapered_coupler = Taper(layer=self.layer_wg, name="TaperedCoupler",
+                                length=self.tapered_coupler_length,
+                                dy_min=self.tapered_coupler_minWidth,
+                                dy_max=self.width)
 
         # Create Device_References of the Devices
         spacer1_ref = self.add_ref(spacer_dev)
@@ -1423,29 +1427,37 @@ class DoubleTaperedDevice(SividdleDevice):
         spacer3_ref = self.add_ref(spacer_dev)
         spacer4_ref = self.add_ref(spacer_dev)
         cavity_ref = self.add_ref(cavity_dev)
-        taperedSupport1_ref = self.add_ref(taperedSupport)
-        taperedSupport2_ref = self.add_ref(taperedSupport)
-        taperedSupport3_ref = self.add_ref(taperedSupport)
-        taperedSupport4_ref = self.add_ref(taperedSupport)
-        taperedCoupler1_ref = self.add_ref(taperedCoupler)
-        taperedCoupler2_ref = self.add_ref(taperedCoupler)
+        tapered_support1_ref = self.add_ref(tapered_support)
+        tapered_support2_ref = self.add_ref(tapered_support)
+        tapered_support3_ref = self.add_ref(tapered_support)
+        tapered_support4_ref = self.add_ref(tapered_support)
+        tapered_coupler1_ref = self.add_ref(tapered_coupler)
+        tapered_coupler2_ref = self.add_ref(tapered_coupler)
 
         # Connect up the references to build the geometry
-        spacer1_ref.connect('in_spacer',taperedCoupler1_ref.ports['tpport2'])
-        taperedSupport1_ref.connect('tpport1',spacer1_ref.ports['out_spacer'])
-        spacer2_ref.connect('in_spacer',taperedSupport1_ref.ports['tpport2'])
-        taperedSupport2_ref.connect('tpport1',spacer2_ref.ports['out_spacer'])
-        cavity_ref.connect('in_cavity',taperedSupport2_ref.ports['tpport2'])
-        taperedSupport3_ref.connect('tpport1',cavity_ref.ports['out_cavity'])
-        spacer3_ref.connect('in_spacer',taperedSupport3_ref.ports['tpport2'])
-        taperedSupport4_ref.connect('tpport1',spacer3_ref.ports['out_spacer'])
-        spacer4_ref.connect('in_spacer',taperedSupport4_ref.ports['tpport2'])
-        taperedCoupler2_ref.connect('tpport2',spacer4_ref.ports['out_spacer'])
+        spacer1_ref.connect('in_spacer',
+                            tapered_coupler1_ref.ports['tpport2'])
+        tapered_support1_ref.connect('tpport1',
+                                     spacer1_ref.ports['out_spacer'])
+        spacer2_ref.connect('in_spacer', tapered_support1_ref.ports['tpport2'])
+        tapered_support2_ref.connect('tpport1',
+                                     spacer2_ref.ports['out_spacer'])
+        cavity_ref.connect('in_cavity', tapered_support2_ref.ports['tpport2'])
+        tapered_support3_ref.connect('tpport1', cavity_ref.ports['out_cavity'])
+        spacer3_ref.connect('in_spacer', tapered_support3_ref.ports['tpport2'])
+        tapered_support4_ref.connect('tpport1',
+                                     spacer3_ref.ports['out_spacer'])
+        spacer4_ref.connect('in_spacer', tapered_support4_ref.ports['tpport2'])
+        tapered_coupler2_ref.connect('tpport2',
+                                     spacer4_ref.ports['out_spacer'])
         # Shift center of bounding box to origin.
         self.center = [0, 0]
 
-class DoubleTaperedDevice_WithCouplerSupports(SividdleDevice):
-    """A device comprised of waveguide tapers on both sides,
+
+class DoubleTaperedDeviceWithCouplerSupports(SividdleDevice):
+    """A double tapered device with coupler supports.
+
+    A device comprised of waveguide tapers on both sides,
     two quadratic tapered supports on either side of the cavity,
     and a photonic crystal cavity (PCC) zone at the center. The PCC
     holes are defined in a separate class. The tapered waveguide
@@ -1477,77 +1489,86 @@ class DoubleTaperedDevice_WithCouplerSupports(SividdleDevice):
         tapered support width. Typically, this is 1.4*width
     params['waveguide_spacer_length']: float
         length of the spacers that separate the tapered coupler
-        from the tapered support and that space out the two 
+        from the tapered support and that space out the two
         tapered supports on either side.
     params['width']: float
         cavity and waveguide width
     """
 
-
     def __init__(self, params):
 
         SividdleDevice.__init__(self, name=params['name'])
-        
+
         self.layer_wg = params['layer_wg']
         self.tapered_coupler_length = params['tapered_coupler_length']
         self.waveguide_spacer_length = params['waveguide_spacer_length']
         self.cavity_length = params['cavity_length']
         self.tapered_support_length = params['tapered_support_length']
         self.tapered_coupler_minWidth = params['tapered_coupler_minWidth']
-        self.tapered_coupler_support_beam_length = params['tapered_coupler_support_beam_length']
-        self.tapered_coupler_support_beam_width = params['tapered_coupler_support_beam_width']
-        self.tapered_coupler_support_roof_height = params['tapered_coupler_support_roof_height']
-        self.tapered_coupler_support_house_width = params['tapered_coupler_support_house_width']
-        self.tapered_coupler_support_house_length = params['tapered_coupler_support_house_length']
+        self.tapered_coupler_support_beam_length = params[
+            'tapered_coupler_support_beam_length']
+        self.tapered_coupler_support_beam_width = params[
+            'tapered_coupler_support_beam_width']
+        self.tapered_coupler_support_roof_height = params[
+            'tapered_coupler_support_roof_height']
+        self.tapered_coupler_support_house_width = params[
+            'tapered_coupler_support_house_width']
+        self.tapered_coupler_support_house_length = params[
+            'tapered_coupler_support_house_length']
         self.width = params['width']
         self.tapered_support_width = params['tapered_support_width']
 
         self.tapered_support_params = {
-            'name'           : "taperedSupport",
+            'name'           : "tapered_support",
             'layer'          : self.layer_wg,
-            'taper_length_1' : self.tapered_support_length/2,
+            'taper_length_1' : self.tapered_support_length / 2,
             'straight_length_center': 0,
-            'taper_length_2' : self.tapered_support_length/2,
+            'taper_length_2' : self.tapered_support_length / 2,
             'width_1'        : self.width,
             'width_center'   : self.tapered_support_width,
             'width_2'        : self.width
         }
 
         # Create paths to define segments of device
-        spacer_path = pp.straight(length = self.waveguide_spacer_length)
-        cavity_path = pp.straight(length = self.cavity_length)
+        spacer_path = pp.straight(length=self.waveguide_spacer_length)
+        cavity_path = pp.straight(length=self.cavity_length)
 
         # Create blank CrossSection objects to be used for each path
         spacer_xs = CrossSection()
         cavity_xs = CrossSection()
 
         # Add a section to each CrossSection to define the width for extrusion
-        spacer_xs.add(width = self.width, offset = 0, layer = self.layer_wg,
-            ports = ('in_spacer','out_spacer'))
-        cavity_xs.add(width = self.width, offset = 0, layer = self.layer_wg,
-            ports = ('in_cavity','out_cavity'))
-        
+        spacer_xs.add(width=self.width, offset=0, layer=self.layer_wg,
+                      ports=('in_spacer', 'out_spacer'))
+        cavity_xs.add(width=self.width, offset=0, layer=self.layer_wg,
+                      ports=('in_cavity', 'out_cavity'))
+
         # Combine the Paths and the CrossSections to make Devices
-        spacer_dev = spacer_path.extrude(cross_section = spacer_xs)
-        cavity_dev = cavity_path.extrude(cross_section = cavity_xs)
+        spacer_dev = spacer_path.extrude(cross_section=spacer_xs)
+        cavity_dev = cavity_path.extrude(cross_section=cavity_xs)
 
         # Create TaperedSupport Device
-        taperedSupport = TaperedSupport(self.tapered_support_params)
+        tapered_support = TaperedSupport(self.tapered_support_params)
 
         # Create Taper Device for tapered couplers
-        
-        taperedCoupler = TaperedCoupler_wSupport(layer = self.layer_wg,name = "TaperedCoupler",
-                length = self.tapered_coupler_length,
-                dy_min = self.tapered_coupler_minWidth, dy_max=self.width,
-                beam_length = self.tapered_coupler_support_beam_length,
-                beam_width = self.tapered_coupler_support_beam_width,
-                roof_height = self.tapered_coupler_support_roof_height,
-                house_width = self.tapered_coupler_support_house_width,
-                house_length = self.tapered_coupler_support_house_length)
+
+        tapered_coupler = TaperedCouplerWSupport(
+            layer=self.layer_wg,
+            name="TaperedCoupler",
+            length=self.tapered_coupler_length,
+            dy_min=self.tapered_coupler_minWidth, dy_max=self.width,
+            beam_length=self.tapered_coupler_support_beam_length,
+            beam_width=self.tapered_coupler_support_beam_width,
+            roof_height=self.tapered_coupler_support_roof_height,
+            house_width=self.tapered_coupler_support_house_width,
+            house_length=self.tapered_coupler_support_house_length
+        )
         # # and for coupler supports
-        # couplerSupport = Taper(layer = self.layer_wg,name = "TaperedCouplerSupport",
+        # couplerSupport = Taper(layer = self.layer_wg,
+        #         name = "TaperedCouplerSupport",
         #         length = self.tapered_coupler_support_length,
-        #         dy_min = self.tapered_coupler_support_width, dy_max=3*self.tapered_coupler_support_width)
+        #         dy_min = self.tapered_coupler_support_width,
+        #         dy_max=3*self.tapered_coupler_support_width)
 
         # Create Device_References of the Devices
         spacer1_ref = self.add_ref(spacer_dev)
@@ -1555,34 +1576,38 @@ class DoubleTaperedDevice_WithCouplerSupports(SividdleDevice):
         spacer3_ref = self.add_ref(spacer_dev)
         spacer4_ref = self.add_ref(spacer_dev)
         cavity_ref = self.add_ref(cavity_dev)
-        taperedSupport1_ref = self.add_ref(taperedSupport)
-        taperedSupport2_ref = self.add_ref(taperedSupport)
-        taperedSupport3_ref = self.add_ref(taperedSupport)
-        taperedSupport4_ref = self.add_ref(taperedSupport)
-        taperedCoupler1_ref = self.add_ref(taperedCoupler)
-        # taperedCouplerSupport1_ref = self.add_ref(couplerSupport)
-        taperedCoupler2_ref = self.add_ref(taperedCoupler)
-        # taperedCouplerSupport2_ref = self.add_ref(couplerSupport)
+        tapered_support1_ref = self.add_ref(tapered_support)
+        tapered_support2_ref = self.add_ref(tapered_support)
+        tapered_support3_ref = self.add_ref(tapered_support)
+        tapered_support4_ref = self.add_ref(tapered_support)
+        tapered_coupler1_ref = self.add_ref(tapered_coupler)
+        # tapered_couplerSupport1_ref = self.add_ref(couplerSupport)
+        tapered_coupler2_ref = self.add_ref(tapered_coupler)
+        # tapered_couplerSupport2_ref = self.add_ref(couplerSupport)
 
         # Connect up the references to build the geometry
-        # taperedCoupler1_ref.connect('tpport1',taperedCouplerSupport1_ref.ports['tpport1'])
-        spacer1_ref.connect('in_spacer',taperedCoupler1_ref.ports['tpport2'])
-        taperedSupport1_ref.connect('tpport1',spacer1_ref.ports['out_spacer'])
-        spacer2_ref.connect('in_spacer',taperedSupport1_ref.ports['tpport2'])
-        taperedSupport2_ref.connect('tpport1',spacer2_ref.ports['out_spacer'])
-        cavity_ref.connect('in_cavity',taperedSupport2_ref.ports['tpport2'])
-        taperedSupport3_ref.connect('tpport1',cavity_ref.ports['out_cavity'])
-        spacer3_ref.connect('in_spacer',taperedSupport3_ref.ports['tpport2'])
-        taperedSupport4_ref.connect('tpport1',spacer3_ref.ports['out_spacer'])
-        spacer4_ref.connect('in_spacer',taperedSupport4_ref.ports['tpport2'])
-        taperedCoupler2_ref.connect('tpport2',spacer4_ref.ports['out_spacer'])
-        # taperedCouplerSupport2_ref.connect('tpport1',taperedCoupler2_ref.ports['tpport1'])
+        # tapered_coupler1_ref.connect('tpport1',tapered_couplerSupport1_ref.ports['tpport1'])
+        spacer1_ref.connect('in_spacer', tapered_coupler1_ref.ports['tpport2'])
+        tapered_support1_ref.connect('tpport1',
+                                     spacer1_ref.ports['out_spacer'])
+        spacer2_ref.connect('in_spacer', tapered_support1_ref.ports['tpport2'])
+        tapered_support2_ref.connect('tpport1',
+                                     spacer2_ref.ports['out_spacer'])
+        cavity_ref.connect('in_cavity', tapered_support2_ref.ports['tpport2'])
+        tapered_support3_ref.connect('tpport1', cavity_ref.ports['out_cavity'])
+        spacer3_ref.connect('in_spacer', tapered_support3_ref.ports['tpport2'])
+        tapered_support4_ref.connect('tpport1',
+                                     spacer3_ref.ports['out_spacer'])
+        spacer4_ref.connect('in_spacer', tapered_support4_ref.ports['tpport2'])
+        tapered_coupler2_ref.connect('tpport2',
+                                     spacer4_ref.ports['out_spacer'])
+        # tapered_couplerSupport2_ref.connect('tpport1',tapered_coupler2_ref.ports['tpport1'])
         # Shift center of bounding box to origin.
         self.center = [0, 0]
 
 
-class OvercoupledPCC_v0p4p2(SividdleDevice):
-    """Airholes for V0p4p2 Devices
+class OvercoupledPCCv0p4p2(SividdleDevice):
+    """Airholes for V0p4p2 Devices.
 
     Parameters
     ----------
@@ -1660,176 +1685,214 @@ class OvercoupledPCC_v0p4p2(SividdleDevice):
 
         self.layer = params['layer']
 
-
         self.params = params
 
-        self.all_hx,self.all_hy,self.all_a = self.computeGeometry()
-        print(self.all_hx,self.all_hy,self.all_a)
-        print(self.all_hx.shape,self.all_hy.shape,self.all_a.shape)
+        self.all_hx, self.all_hy, self.all_a = self.compute_geometry()
+        print(self.all_hx, self.all_hy, self.all_a)
+        print(self.all_hx.shape, self.all_hy.shape, self.all_a.shape)
         self << EllipseArray(self.layer, self.all_hx, self.all_hy, self.all_a)
         # Shift center of bounding box to origin.
         self.center = [0, 0]
-    
-    def computeGeometry(self):
-        # waveguide-mirror hole size transition from smallest fab-able to mirror hole size
-        # while maintaining ellipse aspect ratio.
-        leftestHole_hx = ((self.hxL/self.hyL)*(self.hxL>self.hyL) + (self.hxL<=self.hyL))*self.min_hole_dim
-        LHS_wvg_mirror_hx = np.linspace(leftestHole_hx,self.hxL,self.params['nholes_wvg-mirr_trans_L'])
-        leftestHole_hy = ((self.hyL/self.hxL)*(self.hxL<self.hyL) + (self.hxL>=self.hyL))*self.min_hole_dim
-        LHS_wvg_mirror_hy = np.linspace(leftestHole_hy,self.hyL,self.params['nholes_wvg-mirr_trans_L'])
+
+    def compute_geometry(self):
+        # waveguide-mirror hole size transition from smallest fab-able to
+        # mirror hole size while maintaining ellipse aspect ratio.
+        leftest_hole_hx = ((self.hxL / self.hyL) * (self.hxL > self.hyL)
+                           + (self.hxL <= self.hyL)) * self.min_hole_dim
+        lhs_wvg_mirror_hx = np.linspace(leftest_hole_hx, self.hxL,
+                                        self.params['nholes_wvg-mirr_trans_L'])
+        leftest_hole_hy = ((self.hyL / self.hxL) * (self.hxL < self.hyL)
+                           + (self.hxL >= self.hyL)) * self.min_hole_dim
+        lhs_wvg_mirror_hy = np.linspace(leftest_hole_hy, self.hyL,
+                                        self.params['nholes_wvg-mirr_trans_L'])
 
         # LHS Photonic crystal mirror holes
-        LHS_mirror_hx = self.hxL*np.ones(self.nholesLMirror)
-        LHS_mirror_hy = self.hyL*np.ones(self.nholesLMirror)
-        
+        lhs_mirror_hx = self.hxL * np.ones(self.nholesLMirror)
+        lhs_mirror_hy = self.hyL * np.ones(self.nholesLMirror)
+
         # defect holes
-        # In general, the mirror hole dimensions may be different on each side, and hole dims have even been varied
-        # as a cavity defect. However, it is practically difficult to fabricate holes of varying sizes. 
-        # This is a constant hole size design, so no transition between hole sizes is necessary
-        LHS_cavity_hx = np.ones(self.nholes_defect)*self.hxL
-        LHS_cavity_hy = np.ones(self.nholes_defect)*self.hyL
-        RHS_cavity_hx = np.ones(self.nholes_defect)*self.hxR
-        RHS_cavity_hy = np.ones(self.nholes_defect)*self.hyR
+        # In general, the mirror hole dimensions may be different on each side,
+        # and hole dims have even been varied as a cavity defect. However, it
+        # is practically difficult to fabricate holes of varying sizes. This is
+        # a constant hole size design, so no transition between hole sizes is
+        # necessary
+        lhs_cavity_hx = np.ones(self.nholes_defect) * self.hxL
+        lhs_cavity_hy = np.ones(self.nholes_defect) * self.hyL
+        rhs_cavity_hx = np.ones(self.nholes_defect) * self.hxR
+        rhs_cavity_hy = np.ones(self.nholes_defect) * self.hyR
 
-        RHS_mirror_hx = self.hxR*np.ones(self.nholesRMirror)
-        RHS_mirror_hy = self.hyR*np.ones(self.nholesRMirror)
+        rhs_mirror_hx = self.hxR * np.ones(self.nholesRMirror)
+        rhs_mirror_hy = self.hyR * np.ones(self.nholesRMirror)
 
-        # waveguide-mirror hole size transition from mirror hole size to smallest fab-able dimension
-        # while maintaining ellipse aspect ratio.
-        rightestHole_hx = ((self.hxR/self.hyR)*(self.hxR>self.hyR) + (self.hxR<=self.hyR))*self.min_hole_dim
-        RHS_wvg_mirror_hx = np.linspace(self.hxR,rightestHole_hx,self.params['nholes_wvg-mirr_trans_R'])
-        rightestHole_hy = ((self.hyR/self.hxR)*(self.hxR<self.hyR) + (self.hxR>=self.hyR))*self.min_hole_dim
-        RHS_wvg_mirror_hy = np.linspace(self.hyR,rightestHole_hy,self.params['nholes_wvg-mirr_trans_R'])
+        # waveguide-mirror hole size transition from mirror hole size to
+        # smallest fab-able dimension while maintaining ellipse aspect ratio.
+        rightest_hole_hx = ((self.hxR / self.hyR) * (self.hxR > self.hyR)
+                            + (self.hxR <= self.hyR)) * self.min_hole_dim
+        rhs_wvg_mirror_hx = np.linspace(self.hxR, rightest_hole_hx,
+                                        self.params['nholes_wvg-mirr_trans_R'])
+        rightest_hole_hy = ((self.hyR / self.hxR) * (self.hxR < self.hyR)
+                            + (self.hxR >= self.hyR)) * self.min_hole_dim
+        rhs_wvg_mirror_hy = np.linspace(self.hyR, rightest_hole_hy,
+                                        self.params['nholes_wvg-mirr_trans_R'])
 
         # append all holes together
-        all_hx = np.append(LHS_wvg_mirror_hx,np.append(LHS_mirror_hx,LHS_cavity_hx))
-        all_hx = np.append(all_hx,np.append(RHS_cavity_hx,np.append(RHS_mirror_hx,RHS_wvg_mirror_hx)))
+        all_hx = np.append(lhs_wvg_mirror_hx,
+                           np.append(lhs_mirror_hx, lhs_cavity_hx))
+        all_hx = np.append(
+            all_hx,
+            np.append(rhs_cavity_hx,
+                      np.append(rhs_mirror_hx, rhs_wvg_mirror_hx))
+        )
 
-        all_hy = np.append(LHS_wvg_mirror_hy,np.append(LHS_mirror_hy,LHS_cavity_hy))
-        all_hy = np.append(all_hy,np.append(RHS_cavity_hy,np.append(RHS_mirror_hy,RHS_wvg_mirror_hy)))
+        all_hy = np.append(lhs_wvg_mirror_hy,
+                           np.append(lhs_mirror_hy, lhs_cavity_hy))
+        all_hy = np.append(
+            all_hy,
+            np.append(rhs_cavity_hy,
+                      np.append(rhs_mirror_hy, rhs_wvg_mirror_hy))
+        )
 
         # lattice constant calculations
 
-        # standing wave lattice constant based on effective index and resonance wavelength
-        standingWave_a = 0.5*self.res_wavelen/self.neff
-        leftest_a = standingWave_a
-        # linearly transition the lattice constant from the waveguide's standing wave
-        # spacing to the mirror spacing. The cartoon heuristic is that this should help
-        # keep the field mostly in the dielectric, and minimize scattering from surfaces.
-        LHS_wvg_mirror_a = np.linspace(leftest_a,self.aL,self.nholes_wvgmirr_trans_L+1)
+        # standing wave lattice constant based on effective index and
+        # resonance wavelength
+        standing_wave_a = 0.5 * self.res_wavelen / self.neff
+        leftest_a = standing_wave_a
+        # linearly transition the lattice constant from the waveguide's
+        # standing wave spacing to the mirror spacing. The cartoon heuristic
+        # is that this should help keep the field mostly in the dielectric,
+        # and minimize scattering from surfaces.
+        lhs_wvg_mirror_a = np.linspace(leftest_a, self.aL,
+                                       self.nholes_wvgmirr_trans_L + 1)
 
         # LHS Photonic crystal mirror holes
-        LHS_mirror_a = self.aL*np.ones(self.nholesLMirror-1)
+        lhs_mirror_a = self.aL * np.ones(self.nholesLMirror - 1)
 
         # defect holes
         # linearly transition the lattice constant from aL to aR
-        aTransSlope = (self.aL-self.aR)/(2*self.nholes_defect - 1)
-        LHS_cavity_a = np.linspace(1,self.nholes_defect,self.nholes_defect)
+        a_trans_slope = (self.aL - self.aR) / (2 * self.nholes_defect - 1)
+        lhs_cavity_a = np.linspace(1, self.nholes_defect, self.nholes_defect)
         #
-        aLTrans = self.aL+(LHS_cavity_a-self.nholes_defect)*aTransSlope
-        LHS_cavity_a[0] = aLTrans[0]*(1-self.maxDef)
-        LHS_cavity_a[1:] = aLTrans[1:]*(1-self.maxDef*(2*((LHS_cavity_a[1:]-1)/self.nholes_defect)**3 - 3*((LHS_cavity_a[1:]-1)/self.nholes_defect)**2+1))
-        LHS_cavity_a = LHS_cavity_a[::-1] 
+        a_l_trans = self.aL + (
+            lhs_cavity_a - self.nholes_defect) * a_trans_slope
+        lhs_cavity_a[0] = a_l_trans[0] * (1 - self.maxDef)
+        lhs_cavity_a[1:] = a_l_trans[1:] * (
+            1 - self.maxDef * (2 * (
+                (lhs_cavity_a[1:] - 1) / self.nholes_defect)**3 - 3 * (
+                (lhs_cavity_a[1:] - 1) / self.nholes_defect)**2 + 1)
+        )
+        lhs_cavity_a = lhs_cavity_a[::-1]
         # blindly copying the form of the defect from the matlab codebase
-        
-        RHS_cavity_a = np.linspace(1,self.nholes_defect,self.nholes_defect)
+
+        rhs_cavity_a = np.linspace(1, self.nholes_defect, self.nholes_defect)
         # This is almost certainly wrong
-        aRTrans = self.aR-(RHS_cavity_a-self.nholes_defect)*aTransSlope
-        RHS_cavity_a[0] = aRTrans[0]*(1-self.maxDef)
-        RHS_cavity_a[1:] = aRTrans[1:]*(1-self.maxDef*(2*((RHS_cavity_a[1:]-1)/self.nholes_defect)**3 - 3*((RHS_cavity_a[1:]-1)/self.nholes_defect)**2+1))
+        a_r_trans = self.aR - (
+            rhs_cavity_a - self.nholes_defect) * a_trans_slope
+        rhs_cavity_a[0] = a_r_trans[0] * (1 - self.maxDef)
+        rhs_cavity_a[1:] = a_r_trans[1:] * (1 - self.maxDef * (
+            2 * ((rhs_cavity_a[1:] - 1) / self.nholes_defect)**3 - 3 * (
+                (rhs_cavity_a[1:] - 1) / self.nholes_defect)**2 + 1
+        ))
         # Turns out the simulated cavity actually didn't use this smallest
-        # 'a' at RHS_cavity_a[0]. So we remove it here.
-        RHS_cavity_a = RHS_cavity_a[1:]
+        # 'a' at rhs_cavity_a[0]. So we remove it here.
+        rhs_cavity_a = rhs_cavity_a[1:]
 
         # RHS Photonic crystal mirror holes
-        RHS_mirror_a = self.aR*np.ones(self.nholesRMirror-1)
+        rhs_mirror_a = self.aR * np.ones(self.nholesRMirror - 1)
 
         # RHS mirror-to-waveguide transition
-        rightest_a = standingWave_a
-        RHS_wvg_mirror_a = np.linspace(self.aR,rightest_a,self.nholes_wvgmirr_trans_R+1)
+        rightest_a = standing_wave_a
+        rhs_wvg_mirror_a = np.linspace(self.aR, rightest_a,
+                                       self.nholes_wvgmirr_trans_R + 1)
 
         # append all holes together
-        all_a = np.append(LHS_wvg_mirror_a,np.append(LHS_mirror_a,LHS_cavity_a))
-        all_a = np.append(all_a,np.append(RHS_cavity_a,np.append(RHS_mirror_a,RHS_wvg_mirror_a)))
+        all_a = np.append(lhs_wvg_mirror_a,
+                          np.append(lhs_mirror_a, lhs_cavity_a))
+        all_a = np.append(all_a,
+                          np.append(rhs_cavity_a,
+                                    np.append(rhs_mirror_a, rhs_wvg_mirror_a)))
 
-        return all_hx,all_hy,all_a
+        return all_hx, all_hy, all_a
 
 
-class OvercoupledAirholeDevice_v0p4p2(SividdleDevice):
-     def __init__(self, PCC_params, DT_params, scaling):
+class OvercoupledAirholeDevicev0p4p2(SividdleDevice):
+    def __init__(self, pcc_params, dt_params, scaling):
 
         SividdleDevice.__init__(self, name='FreeGeom_Device')
 
-        self.PCC_params = PCC_params.copy()
-        self.DT_params = DT_params.copy()
+        self.pcc_params = pcc_params.copy()
+        self.dt_params = dt_params.copy()
         self.scaling = scaling
-        print("scaling = {},hxL = {}".format(scaling,self.PCC_params['hxL']))
-        self.PCC_params['aL'] *= self.scaling
-        self.PCC_params['aR'] *= self.scaling
-        self.PCC_params['hxL'] *= self.scaling
-        self.PCC_params['hyL'] *= self.scaling
-        self.PCC_params['hxR'] *= self.scaling
-        self.PCC_params['hyR'] *= self.scaling
+        print("scaling = {},hxL = {}".format(scaling, self.pcc_params['hxL']))
+        self.pcc_params['aL'] *= self.scaling
+        self.pcc_params['aR'] *= self.scaling
+        self.pcc_params['hxL'] *= self.scaling
+        self.pcc_params['hyL'] *= self.scaling
+        self.pcc_params['hxR'] *= self.scaling
+        self.pcc_params['hyR'] *= self.scaling
 
-        self.DT_params['tapered_support_width'] *= self.scaling
-        self.DT_params['width'] *= self.scaling
+        self.dt_params['tapered_support_width'] *= self.scaling
+        self.dt_params['width'] *= self.scaling
 
-        device_holes = OvercoupledPCC_v0p4p2(self.PCC_params)
-        device_waveguide = DoubleTaperedDevice(self.DT_params)
+        device_holes = OvercoupledPCCv0p4p2(self.pcc_params)
+        device_waveguide = DoubleTaperedDevice(self.dt_params)
 
         self << device_holes
         self << device_waveguide
         # Shift center of bounding box to origin.
         self.center = [0, 0]
 
-class OvercoupledAirholeDevice_wSupport_v0p4p2(SividdleDevice):
-     def __init__(self, PCC_params, DT_params, scaling):
+
+class OvercoupledAirholeDeviceWSupportv0p4p2(SividdleDevice):
+    def __init__(self, pcc_params, dt_params, scaling):
 
         SividdleDevice.__init__(self, name='FreeGeom_Device')
 
-        self.PCC_params = PCC_params.copy()
-        self.DT_params = DT_params.copy()
+        self.pcc_params = pcc_params.copy()
+        self.dt_params = dt_params.copy()
         self.scaling = scaling
-        print("scaling = {},hxL = {}".format(scaling,self.PCC_params['hxL']))
-        self.PCC_params['aL'] *= self.scaling
-        self.PCC_params['aR'] *= self.scaling
-        self.PCC_params['hxL'] *= self.scaling
-        self.PCC_params['hyL'] *= self.scaling
-        self.PCC_params['hxR'] *= self.scaling
-        self.PCC_params['hyR'] *= self.scaling
+        print("scaling = {},hxL = {}".format(scaling, self.pcc_params['hxL']))
+        self.pcc_params['aL'] *= self.scaling
+        self.pcc_params['aR'] *= self.scaling
+        self.pcc_params['hxL'] *= self.scaling
+        self.pcc_params['hyL'] *= self.scaling
+        self.pcc_params['hxR'] *= self.scaling
+        self.pcc_params['hyR'] *= self.scaling
 
-        self.DT_params['tapered_support_width'] *= self.scaling
-        self.DT_params['width'] *= self.scaling
+        self.dt_params['tapered_support_width'] *= self.scaling
+        self.dt_params['width'] *= self.scaling
 
-        device_holes = OvercoupledPCC_v0p4p2(self.PCC_params)
-        device_waveguide = DoubleTaperedDevice_WithCouplerSupports(self.DT_params)
+        device_holes = OvercoupledPCCv0p4p2(self.pcc_params)
+        device_waveguide = DoubleTaperedDeviceWithCouplerSupports(
+            self.dt_params)
 
         self << device_holes
         self << device_waveguide
         # Shift center of bounding box to origin.
         self.center = [0, 0]
+
 
 class ImplantationWindow(SividdleDevice):
-   """
-   This is pretty much just a wrapper for gdspy's round
-   """ 
-   def __init__(self, width, height, layer):
-       SividdleDevice.__init__(self, name='Implant_Window')
-       self.width = width
-       self.height = height
-       self.layer = layer
-       implantWindow = pg.rectangle(
-                    size=(width, height),
-                    layer=layer
-                )
+    """This is pretty much just a wrapper for gdspy's round."""
+
+    def __init__(self, width, height, layer):
+        SividdleDevice.__init__(self, name='Implant_Window')
+        self.width = width
+        self.height = height
+        self.layer = layer
+        implant_window = pg.rectangle(
+            size=(width, height),
+            layer=layer
+        )
     #    implantWindow = gdspy.Round(
     #             (0, 0),
     #             [width * 0.5, height * 0.5],
     #             tolerance=1e-4,
     #             layer=layer
     #         )
-       self.add(implantWindow)
-       self.center = [0,0]
+        self.add(implant_window)
+        self.center = [0, 0]
+
 
 class RetroReflector(SividdleDevice):
     """Device containing retroreflector.
