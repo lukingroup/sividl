@@ -155,90 +155,6 @@ def run_example():
                 dev_ref = write_field.add_ref(v0p4p2_dev1)
             dev_ref.move([x,y])
 
-    
-
-    # write_field<<doubleTaperDevice
-
-    # # Initial slab parameters.
-    # slab_parameters = {
-    #     'expose_layer'  : 1,
-    #     'length_slab'   : 20,
-    #     'width_slit'    : 1,
-    #     'width_slab'    : 2,
-    #     'label_layer'   : 254,
-    # }
-
-    # # Setup sweep parameters.
-    # width_slab_min = 0.5
-    # width_slab_max = 7
-    # num_iter_slab_widths = 7
-
-    # width_slit_min = 0.5
-    # width_slit_max = 7
-    # num_iter_slit_widths = 7
-
-    # # Arrays containing different parameters used for 2D sweep.
-    # slab_widths = np.linspace(
-    #     width_slab_min,
-    #     width_slab_max,
-    #     num_iter_slab_widths
-    # )
-
-    # slit_widths = np.linspace(
-    #     width_slit_min,
-    #     width_slit_max,
-    #     num_iter_slit_widths
-    # )
-
-    # # We will add a label to the devices, with the following parameters:
-    # grid_label_params = {
-    #     'fontsize'      : 5,
-    #     'style'          : 'normal',
-    #     'layer'         : 1,
-    #     'distance'      : 15,
-    #     'revert_numbers': False,
-    #     'revert_letters': False
-    # }
-
-    # # Sweep parameters fully specify the labelled 2D sweep.
-    # sweep_params = {
-    #     'device_params'     : slab_parameters,
-    #     'sweep_name'        : 'horizontal_sweep',
-    #     'device_class'      : sivp.EtchSlap,
-    #     'varsx'             : slab_widths,
-    #     'varsy'             : slit_widths,
-    #     'keyx'              : 'width_slab',
-    #     'keyy'              : 'width_slit',
-    #     'pitchx'            : 30,
-    #     'pitchy'            : 13,
-    #     'grid_label'        : True,
-    #     'grid_label_params' : grid_label_params,
-    #     'equidistant_grid'  : True,
-    #     'staggered'         : False
-    # }
-
-    # # Generate sweep in horizontal direction.
-    # sweep_box_horizontal = sivp.RectangularSweep(sweep_params)
-
-    # # Mirror device and sweep in vertical direction.
-
-    # # Mirror sweep by reversing the order of sweep parameters.
-    # sweep_params['sweep_name'] = 'vertical_sweep'
-    # sweep_params['varsx'] = sweep_params['varsx'][::-1]
-    # sweep_params['varsy'] = sweep_params['varsy'][::-1]
-
-    # # Reverse lettering order to match labelling of horizontal array.
-    # grid_label_params['revert_numbers'] = True
-    # grid_label_params['revert_letters'] = True
-    # sweep_params['grid_label_params'] = grid_label_params
-
-    # # Generate sweep in horizontal direction.
-    # sweep_box_vertical = sivp.RectangularSweep(sweep_params)
-
-    # # Add two sweeps to write field and move accordingly.
-    # write_field << sweep_box_horizontal.move([-100, +105])
-    # write_field << sweep_box_vertical.rotate(45).move([+65, -80])
-
     # Add Arrow pointing to top right alignment marker
     rarrow_params = {
         'name'          : 'arrow',
@@ -267,18 +183,7 @@ def run_example():
     larrow_top_ref.move([-200, 235])
     larrow_bot_ref.move([-200, -235])
 
-    # # For fun, add a picture of the Harvard Logo to the empty space
-    # picture_parameters = {
-    #     'name'          : 'image',
-    #     'image'         : 'staticfiles/harvard_logo.jpeg',
-    #     'threshold'     : 140,
-    #     'pixel_size'    : 0.5,
-    #     'layer'         : 1
-    # }
-
-    # image = sivp.ImageArray(picture_parameters).move([-160, 160]).rotate(-90)
-    # write_field << image
-
+    
     # # Export as GDS file.
     write_field.write_gds('Ovrcpld_v0p4p2.gds')
 
