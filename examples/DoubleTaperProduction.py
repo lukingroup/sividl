@@ -142,6 +142,10 @@ def run_example():
         # x += (i>num_cols/2)*margin_small
         v0p4p2_dev0 = sivp.OvercoupledAirholeDevice_v0p4p2(PCC_params, DT_params, fab_scaling[i])
         v0p4p2_dev1 = sivp.OvercoupledAirholeDevice_wSupport_v0p4p2(PCC_params, DT_wSupport_params, fab_scaling[i])
+
+        implantWindow_dev = sivp.ImplantationWindow(0.4*photonic_scaling[i],0.075*photonic_scaling[i],10)
+        implantWindow_single_dev = sivp.ImplantationWindow(0.075*photonic_scaling[i],0.075*photonic_scaling[i],10)
+
         # if(i==int(num_cols/2)):
         #     pass
         # else:
@@ -153,7 +157,13 @@ def run_example():
                 dev_ref = write_field.add_ref(v0p4p2_dev0)
             else:
                 dev_ref = write_field.add_ref(v0p4p2_dev1)
-            dev_ref.move([x,y])
+            dev_ref.move([x,y])        
+            if(j==3 or j == 7):
+                aperture_ref = write_field.add_ref(implantWindow_single_dev)
+                aperture_ref.move([x+0.624*photonic_scaling[i],y])
+            else:
+                aperture_ref = write_field.add_ref(implantWindow_dev)
+                aperture_ref.move([x+0.736*photonic_scaling[i],y])
 
     # Add Arrow pointing to top right alignment marker
     rarrow_params = {
@@ -183,9 +193,7 @@ def run_example():
     larrow_top_ref.move([-200, 235])
     larrow_bot_ref.move([-200, -235])
 
-    
-    # # Export as GDS file.
-    write_field.write_gds('Ovrcpld_v0p4p2.gds')
+    write_field.write_gds('Ovrcpld_v0p4p2_Implant_555.gds')
 
 
 if __name__ == "__main__":
