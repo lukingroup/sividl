@@ -485,13 +485,13 @@ class TaperedCouplerWSupport(SividdleDevice):
             layer=layer
         )
 
-        taperlope = (dy_min - dy_max) / (2 * length)
-        beamOverlap_x = (beam_width / 2 - dy_max / 2) / taperlope
+        taper_slope = (dy_min - dy_max) / (2 * length)
+        beam_overlap_x = (beam_width / 2 - dy_max / 2) / taper_slope
 
         self.add_polygon(
             [
-                (beamOverlap_x, -beam_width / 2),
-                (beamOverlap_x, beam_width / 2),
+                (beam_overlap_x, -beam_width / 2),
+                (beam_overlap_x, beam_width / 2),
                 (-beam_length, beam_width / 2),
                 (-beam_length, -beam_width / 2)
             ],
@@ -656,25 +656,25 @@ class TaperedSupport(SividdleDevice):
         self.add_port(name='tpport2',
                       port=taper_2_conc_ref.ports['out_taper2_conc'])
 
-    def taperedWidth_1_conc(self, x):
-        taperedSupportWidth1 = self.width_1 + 0.5 * (
+    def tapered_width_1_conc(self, x):
+        tapered_support_width1 = self.width_1 + 0.5 * (
             self.width_center - self.width_1) * (x)**2
-        return taperedSupportWidth1
+        return tapered_support_width1
 
-    def taperedWidth_1_conv(self, x):
-        taperedSupportWidth1 = self.width_center - 0.5 * (
+    def tapered_width_1_conv(self, x):
+        tapered_support_width1 = self.width_center - 0.5 * (
             self.width_center - self.width_1) * ((x - 1))**2
-        return taperedSupportWidth1
+        return tapered_support_width1
 
-    def taperedWidth_2_conv(self, x):
-        taperedSupportWidth2 = self.width_center - 0.5 * (
+    def tapered_width_2_conv(self, x):
+        tapered_support_width2 = self.width_center - 0.5 * (
             self.width_center - self.width_2) * ((x))**2
-        return taperedSupportWidth2
+        return tapered_support_width2
 
-    def taperedWidth_2_conc(self, x):
-        taperedSupportWidth2 = self.width_2 + 0.5 * (
+    def tapered_width_2_conc(self, x):
+        tapered_support_width2 = self.width_2 + 0.5 * (
             self.width_center - self.width_2) * (x - 1)**2
-        return taperedSupportWidth2
+        return tapered_support_width2
 
 
 class WaveGuide(SividdleDevice):
