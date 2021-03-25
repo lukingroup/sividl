@@ -1118,6 +1118,8 @@ class TaperedWaveGuide(SividdleDevice):
     ----------
     params: dict
         Dictionary containing the parameters of the tapered waveguide
+    params['layer']: int
+        Layer of waveguide section.
     params['len_wg']: float
         Length of waveguide section.
     params['height_wg']: float

@@ -85,6 +85,25 @@ phC_parameters = {
 #         'label_layer'   : 253,
 }
 
+tapered_waveguide_params = {
+    'layer'                     : 6,
+    'len_wg'                    : 20,
+    'height_wg'                 : 1,
+    'len_tp_left'               : 15,
+    'len_tp_right'              : 15,
+    'width_tp'                  : 0.2,
+    'which_anchors'             : None,
+    'dx_anchor'                 : 10,
+    'width_anchor'              : 1.5,
+    'widthmax_anchor'           : 2,
+    'length_anchor'             : 3,
+    'invert'                    : True,
+    'invert_layer'              : 5,
+    'taper_gap_left'            : 2,
+    'taper_gap_right'           : 2,
+    'photonic_crystal_params'   : phC_parameters
+}
+
 # Setup slab sweep parameters.
 slabs_per_cluster = 3
 num_devices_x = 3
@@ -108,7 +127,7 @@ num_iter_a = 6
 
 window_width_min = 1
 window_width_max = 3.5
-num_iter_window_widths = 9
+num_iter_window_widths = 3
 
 
 
@@ -176,15 +195,15 @@ slab_sweep_params = {
     'staggered'         : False
 }
 
-phC_sweep_params = {
-    'device_params'     : phC_parameters,
-    'sweep_name'        : 'horizontal_phC_sweep',
-    'device_class'      : sivp.SlabStyleWaveguide,
+waveguide_sweep_params = {
+    'device_params'     : tapered_waveguide_params,
+    'sweep_name'        : 'horizontal_wg_sweep',
+    'device_class'      : sivp.TaperedWaveGuide,
     'varsx'             : a_vals,
     'varsy'             : window_widths,
     'keyx'              : 'a_const',
     'keyy'              : 'window_width',
-    'pitchx'            : 22,
+    'pitchx'            : 75,
     'pitchy'            : 30,
     'grid_label'        : False,
     'grid_label_params' : grid_label_params,
@@ -194,7 +213,7 @@ phC_sweep_params = {
 
 # Generate sweep in horizontal direction.
 sweep_slab_horizontal = sivp.RectangularSweep(slab_sweep_params)
-sweep_phC_horizontal = sivp.RectangularSweep(phC_sweep_params)
+sweep_wg_horizontal = sivp.RectangularSweep(waveguide_sweep_params)
 
 #     # Mirror device and sweep in vertical direction.
 
@@ -203,9 +222,9 @@ slab_sweep_params['sweep_name'] = 'vertical_slab_sweep'
 slab_sweep_params['varsx'] = slab_sweep_params['varsx'][::-1]
 slab_sweep_params['varsy'] = slab_sweep_params['varsy'][::-1]
 
-phC_sweep_params['sweep_name'] = 'vertical_phC_sweep'
-phC_sweep_params['varsx'] = phC_sweep_params['varsx'][::-1]
-phC_sweep_params['varsy'] = phC_sweep_params['varsy'][::-1]
+waveguide_sweep_params['sweep_name'] = 'vertical_phC_sweep'
+waveguide_sweep_params['varsx'] = waveguide_sweep_params['varsx'][::-1]
+waveguide_sweep_params['varsy'] = waveguide_sweep_params['varsy'][::-1]
 
 
 #     # Reverse lettering order to match labelling of horizontal array.
@@ -215,13 +234,13 @@ slab_sweep_params['grid_label_params'] = grid_label_params
 
 #     # Generate sweep in horizontal direction.
 sweep_slab_vertical = sivp.RectangularSweep(slab_sweep_params)
-sweep_phC_vertical = sivp.RectangularSweep(phC_sweep_params)
+sweep_wg_vertical = sivp.RectangularSweep(waveguide_sweep_params)
 
 #     # Add two sweeps to write field and move accordingly.
 write_field << sweep_slab_horizontal.move([-95, +120])
-write_field << sweep_phC_horizontal.move([-95, +120])
+write_field << sweep_wg_horizontal.move([-95, +120])
 write_field << sweep_slab_vertical.rotate(45).move([+70, -70])
-write_field << sweep_phC_vertical.rotate(45).move([+70, -70])
+write_field << sweep_wg_vertical.rotate(45).move([+70, -70])
 
 # Add Arrow pointing to top right alignment marker
 arrow_params = {
@@ -237,6 +256,12 @@ arrowH2 = sivp.RenderedText(arrow_params)
 arrow_params['fontsize'] = 200
 arrowV1 = sivp.RenderedText(arrow_params)
 arrowV2 = sivp.RenderedText(arrow_params)
+
+
+
+tapered_waveguide = sivp.TaperedWaveGuide(tapered_waveguide_params)
+
+
 write_field << arrowH1.move([200, 235])
 write_field << arrowH2.rotate(np.pi).move([-200, -235])
 write_field << arrowV1.rotate(np.pi/2).move([200, 140])
