@@ -149,6 +149,36 @@ class BoundingBox(SividdleDevice):
                           (wf_size * 0.5, wf_size * 0.5),
                           (wf_size * 0.5, -wf_size * 0.5)], layer=layer)
 
+class Ellipse(SividdleDevice):
+    """Device wrapper for gdspy ellipse
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing the following
+        configuration parameter.
+    params['layer']: int
+        Layer of ellipse.
+    params['rx']: float
+        ellipse axis1 radius
+    params['ry']: float
+        ellipse axis2 radius
+    """
+    def __init__(self, params):
+        SividdleDevice.__init__(self, name='ellipse')
+
+        # Center device
+        self.center = [0, 0]
+
+        ellipse = gdspy.Round(
+            (0, 0),
+            [params['ry'], params['rx']],
+            tolerance=1e-4,
+            layer=params['layer']
+        )
+
+        self.add(ellipse)
+
 
 class CrossAligmentMark(SividdleDevice):
     """Write alignment marker.
