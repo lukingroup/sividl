@@ -151,6 +151,7 @@ class BoundingBox(SividdleDevice):
                           (wf_size * 0.5, wf_size * 0.5),
                           (wf_size * 0.5, -wf_size * 0.5)], layer=layer)
 
+
 class Ellipse(SividdleDevice):
     """Device wrapper for gdspy ellipse
 
@@ -479,7 +480,7 @@ class EtchSlabCluster(SividdleDevice):
             width_slit = self.widths_slit[i]
             width_slab = self.widths_slab[i]
             if i > 0:
-                slab_i_dx = self.slab_dx[i-1] + np.sum(self.lengths_slab[:i])
+                slab_i_dx = self.slab_dx[i - 1] + np.sum(self.lengths_slab[:i])
             else:
                 slab_i_dx = 0
             slit = pg.rectangle(
@@ -1640,7 +1641,7 @@ class DoubleTaperedDeviceWithCouplerSupports(SividdleDevice):
             'tapered_coupler_support_house_length']
         self.width = params['width']
         self.tapered_support_width = params['tapered_support_width']
-        if isinstance(self.tapered_support_width,Iterable):
+        if isinstance(self.tapered_support_width, Iterable):
             self.tapered_support_width_L = self.tapered_support_width[0]
             self.tapered_support_width_R = self.tapered_support_width[1]
         else:
@@ -1745,6 +1746,7 @@ class DoubleTaperedDeviceWithCouplerSupports(SividdleDevice):
         # tapered_couplerSupport2_ref.connect('tpport1',tapered_coupler2_ref.ports['tpport1'])
         # Shift center of bounding box to origin.
         self.center = [0, 0]
+
 
 class OvercoupledPCCv0p4p2(SividdleDevice):
     """Airholes for V0p4p2 Devices.
