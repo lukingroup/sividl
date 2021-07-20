@@ -57,7 +57,6 @@ def run_example():
     # write_field = pg.import_gds(filename='BartProd_NVapertures.gds',
     #                             cellname='toplevel', flatten=False)
     
-
     implant_window = sivp.ImplantationWindow(0.062, 0.075, 11)
 
     half_cavity_7 = make_half_cavity(7)
