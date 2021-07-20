@@ -19,6 +19,7 @@ from __future__ import absolute_import, division, print_function
 import copy
 import itertools as it
 import string
+from collections import Iterable
 
 import gdspy
 from matplotlib.font_manager import FontProperties
@@ -1605,8 +1606,10 @@ class DoubleTaperedDeviceWithCouplerSupports(SividdleDevice):
         max width of tapered coupler support
     params['tapered_support_length']: float
         length of the taperedSupports
-    params['tapered_support_width']: float
-        tapered support width. Typically, this is 1.4*width
+    params['tapered_support_width']: float or array of floats
+        tapered support width. Typically, this is 1.4*width.
+        If array, then first element is width for left and second
+        is for width on right.
     params['waveguide_spacer_length']: float
         length of the spacers that separate the tapered coupler
         from the tapered support and that space out the two
@@ -1637,15 +1640,32 @@ class DoubleTaperedDeviceWithCouplerSupports(SividdleDevice):
             'tapered_coupler_support_house_length']
         self.width = params['width']
         self.tapered_support_width = params['tapered_support_width']
+        if isinstance(self.tapered_support_width,Iterable):
+            self.tapered_support_width_L = self.tapered_support_width[0]
+            self.tapered_support_width_R = self.tapered_support_width[1]
+        else:
+            self.tapered_support_width_L = self.tapered_support_width
+            self.tapered_support_width_R = self.tapered_support_width
 
-        self.tapered_support_params = {
+        self.tapered_support_L_params = {
             'name'           : "tapered_support",
             'layer'          : self.layer_wg,
             'taper_length_1' : self.tapered_support_length / 2,
             'straight_length_center': 0,
             'taper_length_2' : self.tapered_support_length / 2,
             'width_1'        : self.width,
-            'width_center'   : self.tapered_support_width,
+            'width_center'   : self.tapered_support_width_L,
+            'width_2'        : self.width
+        }
+
+        self.tapered_support_R_params = {
+            'name'           : "tapered_support",
+            'layer'          : self.layer_wg,
+            'taper_length_1' : self.tapered_support_length / 2,
+            'straight_length_center': 0,
+            'taper_length_2' : self.tapered_support_length / 2,
+            'width_1'        : self.width,
+            'width_center'   : self.tapered_support_width_R,
             'width_2'        : self.width
         }
 
@@ -1668,7 +1688,8 @@ class DoubleTaperedDeviceWithCouplerSupports(SividdleDevice):
         cavity_dev = cavity_path.extrude(cross_section=cavity_xs)
 
         # Create TaperedSupport Device
-        tapered_support = TaperedSupport(self.tapered_support_params)
+        tapered_support_L = TaperedSupport(self.tapered_support_L_params)
+        tapered_support_R = TaperedSupport(self.tapered_support_R_params)
 
         # Create Taper Device for tapered couplers
 
@@ -1696,10 +1717,10 @@ class DoubleTaperedDeviceWithCouplerSupports(SividdleDevice):
         spacer3_ref = self.add_ref(spacer_dev)
         spacer4_ref = self.add_ref(spacer_dev)
         cavity_ref = self.add_ref(cavity_dev)
-        tapered_support1_ref = self.add_ref(tapered_support)
-        tapered_support2_ref = self.add_ref(tapered_support)
-        tapered_support3_ref = self.add_ref(tapered_support)
-        tapered_support4_ref = self.add_ref(tapered_support)
+        tapered_support1_ref = self.add_ref(tapered_support_L)
+        tapered_support2_ref = self.add_ref(tapered_support_L)
+        tapered_support3_ref = self.add_ref(tapered_support_R)
+        tapered_support4_ref = self.add_ref(tapered_support_R)
         tapered_coupler1_ref = self.add_ref(tapered_coupler)
         # tapered_couplerSupport1_ref = self.add_ref(couplerSupport)
         tapered_coupler2_ref = self.add_ref(tapered_coupler)
@@ -1724,7 +1745,6 @@ class DoubleTaperedDeviceWithCouplerSupports(SividdleDevice):
         # tapered_couplerSupport2_ref.connect('tpport1',tapered_coupler2_ref.ports['tpport1'])
         # Shift center of bounding box to origin.
         self.center = [0, 0]
-
 
 class OvercoupledPCCv0p4p2(SividdleDevice):
     """Airholes for V0p4p2 Devices.
