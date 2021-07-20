@@ -1,3 +1,4 @@
+
 # =============================================================================='
 # sividl.devices
 # ==============================================================================
@@ -416,6 +417,95 @@ class EtchSlap(SividdleDevice):
             position=(self.xmin, self.ymax),
             layer=self.label_layer
         )
+
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
+
+
+class EtchSlabCluster(SividdleDevice):
+    """Generates multiple pairs of etching strips for isotropic etching tests.
+
+    This is meant for making extremely long slabs and/or slabs with tethers to
+    the substrate. Note that for ease of placing photonic crystals and other
+    features on top, the slab cluster will be placed such that (0,0) is located
+    at the leftmost edge of the leftmost slab (and centered in the
+    y-direction).
+
+    Parameters
+    ----------
+    params: dict
+        Dictionary containing the following parameters:
+
+    params['expose_layer']: int
+        Layer for exposed regions.
+    params['id_string']: string
+        Identifier of device, will be printed
+        in label layer.
+    params['label_layer']: int
+        Layer for labelling which details
+        slit/slap dimensions.
+    params['num_slabs']: int
+        Number of adjacent slabs
+    params['lengths_slab']: array of floats
+        Lengths of the slits and the resulting slabs.
+    params['widths_slit']: array of floats
+        Widths of the pairs of slits.
+    params['widths_slab']: array of floats:
+        Separations of each pair of slits which will result
+        in widths of slabs.
+    params['slab_dx']: array of floats:
+        Distances in the x direction between pairs of slits.
+        Note that this array will have one fewer element than
+        the other arrays.
+    """
+
+    def __init__(self, params):
+
+        SividdleDevice.__init__(self, name='etchslab')
+
+        # retrieve parameters
+        self.id_string = params['id_string']
+        self.expose_layer = params['expose_layer']
+        self.label_layer = params['label_layer']
+        self.num_slabs = params['num_slabs']
+        self.lengths_slab = params['lengths_slab']
+        self.widths_slit = params['widths_slit']
+        self.widths_slab = params['widths_slab']
+        self.slab_dx = params['slab_dx']
+
+        for i in range(self.num_slabs):
+            length_slab = self.lengths_slab[i]
+            width_slit = self.widths_slit[i]
+            width_slab = self.widths_slab[i]
+            if i > 0:
+                slab_i_dx = self.slab_dx[i-1] + np.sum(self.lengths_slab[:i])
+            else:
+                slab_i_dx = 0
+            slit = pg.rectangle(
+                size=(width_slit, length_slab),
+                layer=self.expose_layer
+            ).rotate(90)
+
+            self << pg.copy(slit).move((
+                slab_i_dx,
+                (width_slit + width_slab) * 0.5
+            ))
+            self << pg.copy(slit).move((
+                slab_i_dx,
+                -(width_slit + width_slab) * 0.5
+            ))
+            self.add_label(
+                text='{} \n slab_width = {:.2f} \
+                    \n slit_width = {:.2f} \
+                    \n slab_length = {:.2f}'.format(
+                    self.id_string,
+                    width_slab,
+                    width_slit,
+                    length_slab
+                ),
+                position=(self.xmin, self.ymax),
+                layer=self.label_layer
+            )
 
         # Shift center of bounding box to origin.
         self.center = [0, 0]
