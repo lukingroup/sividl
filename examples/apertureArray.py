@@ -18,6 +18,7 @@ import sividl.sividl_devices as sivp  # noqa: E402
 # Note that all dimensions are in micrometers.
 # ==============================================================================
 
+
 def make_half_cavity(num_mirrs):
     adef = [252.49, 254.01, 257.94, 263.32, 269.17, 274.55, 278.48]
     amir = [280.0]
@@ -31,6 +32,7 @@ def make_half_cavity(num_mirrs):
     a[-3:-2] *= 0.93
     return np.copy(a)
 
+
 def add_lhs(write_field, implant_window, lhs, x0, y0):
     xl = x0
     for ai in lhs:
@@ -40,6 +42,7 @@ def add_lhs(write_field, implant_window, lhs, x0, y0):
     aperture_ref = write_field.add_ref(implant_window)
     aperture_ref.move([xl, y0])
 
+
 def add_rhs(write_field, implant_window, rhs, x0, y0):
     xr = x0
     for ai in rhs:
@@ -48,6 +51,7 @@ def add_rhs(write_field, implant_window, rhs, x0, y0):
         xr += ai
     aperture_ref = write_field.add_ref(implant_window)
     aperture_ref.move([xr, y0])
+
 
 def run_example():
 

@@ -3,51 +3,20 @@ import os
 import sys
 
 import numpy as np
-from math import floor
 import phidl.geometry as pg
 
 sys.path.append(os.path.abspath(os.path.join('.')))
 import sividl.sividl_devices as sivp  # noqa: E402
 
 # ==============================================================================
-# Adapted from example.py for aperture array for NV implantation on Bart's failed COVID chips
+# Adapted from aperture array we used for kai-me but now 
+# for e6 overgrowth project.
 # ==============================================================================
 # This code will generate a writefield and an array of labelled devices.
 # Devices are two slits of varying width separated by varying distance.
 #
 # Note that all dimensions are in micrometers.
 # ==============================================================================
-
-def make_half_cavity(num_mirrs):
-    adef = [252.49, 254.01, 257.94, 263.32, 269.17, 274.55, 278.48]
-    amir = [280.0]
-    atap = [274.98, 263.00, 248.70, 236.72, 231.70]
-    abarrier = []
-    for i in range(num_mirrs):
-        abarrier += amir
-    a = np.array(adef + abarrier + atap)
-    a *= 1e-3
-    a *= 0.965
-    a[-3:-2] *= 0.93
-    return np.copy(a)
-
-def add_lhs(write_field, implant_window, lhs, x0, y0):
-    xl = x0
-    for ai in lhs:
-        aperture_ref = write_field.add_ref(implant_window)
-        aperture_ref.move([xl, y0])
-        xl -= ai
-    aperture_ref = write_field.add_ref(implant_window)
-    aperture_ref.move([xl, y0])
-
-def add_rhs(write_field, implant_window, rhs, x0, y0):
-    xr = x0
-    for ai in rhs:
-        aperture_ref = write_field.add_ref(implant_window)
-        aperture_ref.move([xr, y0])
-        xr += ai
-    aperture_ref = write_field.add_ref(implant_window)
-    aperture_ref.move([xr, y0])
 
 
 def run_example():
@@ -56,8 +25,9 @@ def run_example():
 
     aperture_sizes = np.linspace(0.02, 0.07, 3)
     print(aperture_sizes)
-    implant_windows = [sivp.ImplantationWindow(ap_dim, ap_dim, 11) for ap_dim in aperture_sizes]
-    device_length = 80 # um
+    implant_windows = [sivp.ImplantationWindow(ap_dim, ap_dim, 11) 
+                       for ap_dim in aperture_sizes]
+    device_length = 80  # um
     x0 = 139
     y0 = 176
 
