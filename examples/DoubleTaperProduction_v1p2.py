@@ -246,10 +246,15 @@ def run_example():
                          v0p4p2_7_4_dev1, v0p4p2_4_4_dev0, v0p4p2_4_4_dev1,
                          v0p4p2_3_3_dev0, v0p4p2_3_3_dev1, v0p4p2_7_4_dev0]
 
-        implant_window_dev = sivp.ImplantationWindow(
-            0.4 * photonic_scaling[i], 0.075 * photonic_scaling[i], 10)
-        implant_window_single_dev = sivp.ImplantationWindow(
-            0.075 * photonic_scaling[i], 0.075 * photonic_scaling[i], 10)
+        aperture_dev = sivp.ImplantationWindow(
+            0.069 * photonic_scaling[i], 0.069 * photonic_scaling[i], 10)
+        # implant_window_single_dev = sivp.ImplantationWindow(
+        #     0.075 * photonic_scaling[i], 0.075 * photonic_scaling[i], 10)
+
+        aperture_offsets = np.array([0.853, 0.853, 0.735, 0.735, 0.735, 0.735,
+                                    0.735, 0.735, 0.735, 0.735, 0.322, 0.322,
+                                    0.3106, 0.3106, 0.735])
+        aperture_offsets *= photonic_scaling[i]
 
         row_coords = np.linspace(
             wf_width / 2 - margin_y - offset * i,
@@ -258,6 +263,9 @@ def run_example():
         for j, y in enumerate(row_coords):
             dev_ref = write_field.add_ref(column_layout[j])
             dev_ref.move([x, y])
+
+            ap_ref = write_field.add_ref(aperture_dev)
+            ap_ref.move([x + aperture_offsets[j], y])
             # if(j == 3 or j == 7):
             #     aperture_ref = write_field.add_ref(implant_window_single_dev)
             #     aperture_ref.move([x + 0.624 * photonic_scaling[i], y])
@@ -293,7 +301,7 @@ def run_example():
     # larrow_top_ref.move([-200, 235])
     larrow_bot_ref.move([-200, -235])
 
-    write_field.write_gds('Ovrcpld_v1p2.gds')
+    write_field.write_gds('Ovrcpld_v1p2_apertures.gds')
 
 
 if __name__ == "__main__":
