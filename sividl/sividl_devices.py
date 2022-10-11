@@ -742,19 +742,19 @@ class TaperedSupport(SividdleDevice):
 
         # Combine the Path and the CrossSection
         taper_1_conc_dev = taper_1_conc_path.extrude(
-            cross_section=w_taper1_conc
+            w_taper1_conc
         )
         taper_1_conv_dev = taper_1_conv_path.extrude(
-            cross_section=w_taper1_conv
+            w_taper1_conv
         )
         straight_center_dev = straight_center_path.extrude(
-            cross_section=w_center
+            w_center
         )
         taper_2_conv_dev = taper_2_conv_path.extrude(
-            cross_section=w_taper2_conv
+            w_taper2_conv
         )
         taper_2_conc_dev = taper_2_conc_path.extrude(
-            cross_section=w_taper2_conc
+            w_taper2_conc
         )
 
         taper_1_conc_ref = self.add_ref(taper_1_conc_dev)
@@ -1531,8 +1531,8 @@ class DoubleTaperedDevice(SividdleDevice):
                       ports=('in_cavity', 'out_cavity'))
 
         # Combine the Paths and the CrossSections to make Devices
-        spacer_dev = spacer_path.extrude(cross_section=spacer_xs)
-        cavity_dev = cavity_path.extrude(cross_section=cavity_xs)
+        spacer_dev = spacer_path.extrude(spacer_xs)
+        cavity_dev = cavity_path.extrude(cavity_xs)
 
         # Create TaperedSupport Device
         tapered_support = TaperedSupport(self.tapered_support_params)
@@ -1685,8 +1685,8 @@ class DoubleTaperedDeviceWithCouplerSupports(SividdleDevice):
                       ports=('in_cavity', 'out_cavity'))
 
         # Combine the Paths and the CrossSections to make Devices
-        spacer_dev = spacer_path.extrude(cross_section=spacer_xs)
-        cavity_dev = cavity_path.extrude(cross_section=cavity_xs)
+        spacer_dev = spacer_path.extrude(spacer_xs)
+        cavity_dev = cavity_path.extrude(cavity_xs)
 
         # Create TaperedSupport Device
         tapered_support_L = TaperedSupport(self.tapered_support_L_params)
