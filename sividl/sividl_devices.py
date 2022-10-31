@@ -2155,6 +2155,39 @@ class OvercoupledPCCv0p4p2(SividdleDevice):
 
         return all_hx, all_hy, all_a
 
+class AirholeDevice(SividdleDevice):
+    def __init__(self, pcc_params, dt_params, scaling, coupler_supports=False):
+
+        SividdleDevice.__init__(self, name='FreeGeom_Device')
+
+        self.pcc_params = pcc_params.copy()
+        self.dt_params = dt_params.copy()
+        self.scaling = scaling
+        print("scaling = {},hxL = {}".format(scaling, self.pcc_params['hxL']))
+        self.pcc_params['aL'] *= self.scaling
+        self.pcc_params['aR'] *= self.scaling
+        self.pcc_params['hxL'] *= self.scaling
+        self.pcc_params['hyL'] *= self.scaling
+        self.pcc_params['hxR'] *= self.scaling
+        self.pcc_params['hyR'] *= self.scaling
+
+        self.dt_params['tapered_support_width'] *= self.scaling
+        self.dt_params['width'] *= self.scaling
+
+        device_holes = AirholePCC_PeriodOnly(self.pcc_params)
+        if(coupler_supports):
+            device_waveguide = DoubleTaperedDeviceWithCouplerSupports(
+                               self.dt_params)
+        else:
+            device_waveguide = DoubleTaperedDevice(self.dt_params)
+
+        
+
+        self << device_holes
+        self << device_waveguide
+        # Shift center of bounding box to origin.
+        self.center = [0, 0]
+
 
 class OvercoupledAirholeDevicev0p4p2(SividdleDevice):
     def __init__(self, pcc_params, dt_params, scaling):
