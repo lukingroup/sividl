@@ -18,6 +18,79 @@ import phidl.geometry as pg
 
 
 def run_example():
+    waveguide_width = 0.482
+    hsq_scaling_factor = 1.126
+    waveguide_width_hsq = hsq_scaling_factor * waveguide_width
+
+    # Scale the cavity design to hit target wavelegnth
+    nominal_resonance = 0.7377  # Simulated wavelength of cavity
+    target_resonance = 0.737    # Target wavelength of cavity
+    resonance_scaling = target_resonance / nominal_resonance
+
+    pcc_params_7_5 = {
+        'layer'                  : 2,
+        'aL'                     : 0.2717,
+        'aR'                     : 0.2502,
+        'hxL'                    : 0.1135849,
+        'hyL'                    : 0.1605274,
+        'hxR'                    : 0.1135849,
+        'hyR'                    : 0.1605274,
+        'maxDef'                 : 0.1392,
+        'nholesLMirror'          : 7,
+        'nholesRMirror'          : 5,
+        'nholes_wvg-mirr_trans_L': 5,
+        'nholes_wvg-mirr_trans_R': 5,
+        'nholes_defect'          : 5,
+        'min_hole_dim'           : 0.05,
+        'effective_index'        : 1.6,
+        'resonance_wavelength'   : 0.737
+    }
+
+    pcc_params_7_4 = {
+        'layer'                  : 2,
+        'aL'                     : 0.2717,
+        'aR'                     : 0.2502,
+        'hxL'                    : 0.1135849,
+        'hyL'                    : 0.1605274,
+        'hxR'                    : 0.1135849,
+        'hyR'                    : 0.1605274,
+        'maxDef'                 : 0.1392,
+        'nholesLMirror'          : 7,
+        'nholesRMirror'          : 4,
+        'nholes_wvg-mirr_trans_L': 5,
+        'nholes_wvg-mirr_trans_R': 5,
+        'nholes_defect'          : 5,
+        'min_hole_dim'           : 0.05,
+        'effective_index'        : 1.6,
+        'resonance_wavelength'   : 0.737
+    }
+
+    double_taper_w_support_thermal_params = {
+        'cavity_length'                       : 11.0,
+        'layer_wg'                            : 1,
+        'name'                                : "DT_wSupport",
+        'tapered_coupler_length'              : 17,
+        'tapered_support_length'              : 10,
+        'tapered_coupler_minWidth'            : 0.11,
+        'tapered_coupler_support_beam_length' : 6.0,
+        'tapered_coupler_support_beam_width'  : 0.33,
+        'tapered_coupler_support_roof_height' : 1.5,
+        'tapered_coupler_support_house_width' : 1.1,
+        'tapered_coupler_support_house_length': 1.5,
+        'tapered_support_width' : np.array([1.8 * waveguide_width_hsq,
+                                            1.4 * waveguide_width_hsq]),
+        'waveguide_spacer_length'             : 6,
+        'width'                               : waveguide_width_hsq
+    }
+
+    device_length = (
+          2 * double_taper_w_support_thermal_params['tapered_coupler_length']
+        + 2 * double_taper_w_support_thermal_params['tapered_coupler_support_beam_length']
+        + 4 * double_taper_w_support_thermal_params['tapered_support_length']
+        + 4 * double_taper_w_support_thermal_params['waveguide_spacer_length']
+        + double_taper_w_support_thermal_params['cavity_length'])
+    print(device_length)
+
     # Setup writefield.
     # Alignment mark parameters
     alignment_mark_params = {
@@ -53,81 +126,9 @@ def run_example():
     # Generate Writefield.
     write_field = sivp.WriteFieldCrossAligmentMark(writefield_parameters)
 
-    waveguide_width = 0.482
-    # Scale the design width for fab
-    waveguide_width_hsq = 1.126 * waveguide_width
-
-    nominal_resonance = 0.7377
-    target_resonance = 0.737
-    resonance_scaling = target_resonance / nominal_resonance
-
-    pcc_params_7_5 = {
-        'layer'               : 2,
-        'aL'                  : 0.2717,
-        'aR'                  : 0.2502,
-        'hxL'                 : 0.1135849,
-        'hyL'                 : 0.1605274,
-        'hxR'                 : 0.1135849,
-        'hyR'                 : 0.1605274,
-        'maxDef'              : 0.1392,
-        'nholesLMirror'       : 7,
-        'nholesRMirror'       : 5,
-        'nholes_wvg-mirr_trans_L': 5,
-        'nholes_wvg-mirr_trans_R': 5,
-        'nholes_defect'       : 5,
-        'min_hole_dim'        : 0.05,
-        'effective_index'     : 1.6,
-        'resonance_wavelength': 0.737
-    }
-
-    pcc_params_7_4 = {
-        'layer'               : 2,
-        'aL'                  : 0.2717,
-        'aR'                  : 0.2502,
-        'hxL'                 : 0.1135849,
-        'hyL'                 : 0.1605274,
-        'hxR'                 : 0.1135849,
-        'hyR'                 : 0.1605274,
-        'maxDef'              : 0.1392,
-        'nholesLMirror'       : 7,
-        'nholesRMirror'       : 4,
-        'nholes_wvg-mirr_trans_L': 5,
-        'nholes_wvg-mirr_trans_R': 5,
-        'nholes_defect'       : 5,
-        'min_hole_dim'        : 0.05,
-        'effective_index'     : 1.6,
-        'resonance_wavelength': 0.737
-    }
-
-    double_taper_w_support_thermal_params = {
-        'cavity_length'         : 11.0,
-        'layer_wg'              : 1,
-        'name'                  : "DT_wSupport",
-        'tapered_coupler_length': 17,
-        'tapered_support_length': 10,
-        'tapered_coupler_minWidth': 0.11,
-        'tapered_coupler_support_beam_length' : 6.0,
-        'tapered_coupler_support_beam_width'  : 0.33,
-        'tapered_coupler_support_roof_height' : 1.5,
-        'tapered_coupler_support_house_width' : 1.1,
-        'tapered_coupler_support_house_length': 1.5,
-        'tapered_support_width' : np.array([1.8 * waveguide_width_hsq,
-                                            1.4 * waveguide_width_hsq]),
-        'waveguide_spacer_length': 6,
-        'width'               : waveguide_width_hsq
-    }
-
     num_cols = 3
     num_rows = 15
     wf_width = writefield_parameters['bounding_box_size']
-    device_length = (
-        2 * double_taper_w_support_thermal_params['tapered_coupler_length']
-        + 2 * double_taper_w_support_thermal_params['tapered_coupler_support_beam_length']
-        + 4 * double_taper_w_support_thermal_params['tapered_support_length']
-        + 4 * double_taper_w_support_thermal_params['waveguide_spacer_length']
-        + double_taper_w_support_thermal_params['cavity_length'])
-
-    print(device_length)
 
     margin_text = 30.0
     margin_y = 40.0
@@ -141,9 +142,10 @@ def run_example():
 
     col_coords = np.linspace(
         -wf_width / 2 + margin_large,
-        wf_width / 2 - margin_large,
-        num_cols)
+         wf_width / 2 - margin_large,
+         num_cols)
 
+    # Each column is a different photonic scaling to account for fab variance
     for i, x in enumerate(col_coords):
         text_params = {
             'name'     : f'label_{photonic_scaling[i]:1.5}',
@@ -159,6 +161,8 @@ def run_example():
         label_bot_ref = write_field.add_ref(text_label)
         label_bot_ref.move([x, -wf_width / 2 + margin_text / 2])
 
+        # Define the column of devices! They are defined here as they need to
+        # have a differnt fab scaling per column.
         v0p4p2_7_5_dev1 = sivp.OvercoupledAirholeDeviceWSupportv0p4p2(
             pcc_params_7_5, double_taper_w_support_thermal_params,
             fab_scaling[i])
@@ -186,6 +190,9 @@ def run_example():
              wf_width / 2 - margin_y - offset * i,
             -wf_width / 2 + margin_y + offset * (num_cols - i - 1),
             num_rows)
+
+        # For each row, we just write the appropriate device and aperture
+        # based on the column layout
         for j, y in enumerate(row_coords):
             dev_ref = write_field.add_ref(column_layout[j])
             dev_ref.move([x, y])
@@ -227,12 +234,10 @@ def run_example():
 
     write_field.move([10000, 10000])
 
-    write_field.write_gds('Ovrcpld_v1p5_apertures.gds', precision=1e-10)
-
+    write_field.write_gds('Ovrcpld_v1p6_apertures.gds', precision=1e-10)
 
 if __name__ == "__main__":
     run_example()
-
 
 def test_run_example():
     """Pytest launcher for example test. This pytest will run the example and
