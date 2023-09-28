@@ -61,7 +61,7 @@ def run_example():
     target_resonance = 0.737
     resonance_scaling = target_resonance / nominal_resonance
 
-    pcc_params_7_3 = {
+    pcc_params_7_5 = {
         'layer'               : 2,
         'aL'                  : 0.2717,
         'aR'                  : 0.2502,
@@ -71,7 +71,7 @@ def run_example():
         'hyR'                 : 0.1605274,
         'maxDef'              : 0.1392,
         'nholesLMirror'       : 7,
-        'nholesRMirror'       : 3,
+        'nholesRMirror'       : 5,
         'nholes_wvg-mirr_trans_L': 5,
         'nholes_wvg-mirr_trans_R': 5,
         'nholes_defect'       : 5,
@@ -145,18 +145,22 @@ def run_example():
         + double_taper_w_support_params['cavity_length'])
 
     print(device_length)
+
     margin_text = 30.0
     margin_y = 40.0
     margin_large = device_length / 2 + 10.0
     offset = (wf_width - 2 * margin_y) / num_rows / num_cols
     print("offset = ", offset)
+
     photonic_scaling = np.linspace(1.0, 0.965, num_cols)
     fab_scaling = resonance_scaling * photonic_scaling
     print(fab_scaling)
+
     col_coords = np.linspace(
         -wf_width / 2 + margin_large,
         wf_width / 2 - margin_large,
         num_cols)
+
     for i, x in enumerate(col_coords):
         text_params = {
             'name'     : f'label_{photonic_scaling[i]:1.5}',
@@ -172,29 +176,31 @@ def run_example():
         label_bot_ref = write_field.add_ref(text_label)
         label_bot_ref.move([x, -wf_width / 2 + margin_text / 2])
 
-        v0p4p2_7_3_dev1 = sivp.OvercoupledAirholeDeviceWSupportv0p4p2(
-            pcc_params_7_3, double_taper_w_support_thermal_params,
+        v0p4p2_7_5_dev1 = sivp.OvercoupledAirholeDeviceWSupportv0p4p2(
+            pcc_params_7_5, double_taper_w_support_thermal_params,
             fab_scaling[i])
         v0p4p2_7_4_dev1 = sivp.OvercoupledAirholeDeviceWSupportv0p4p2(
             pcc_params_7_4, double_taper_w_support_thermal_params,
             fab_scaling[i])
 
-        column_layout = [v0p4p2_7_3_dev1, v0p4p2_7_4_dev1, v0p4p2_7_3_dev1,
-                         v0p4p2_7_4_dev1, v0p4p2_7_3_dev1, v0p4p2_7_4_dev1,
-                         v0p4p2_7_3_dev1, v0p4p2_7_4_dev1, v0p4p2_7_3_dev1,
-                         v0p4p2_7_4_dev1, v0p4p2_7_3_dev1, v0p4p2_7_4_dev1,
-                         v0p4p2_7_3_dev1, v0p4p2_7_4_dev1, v0p4p2_7_3_dev1]
+        column_layout = [v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_4_dev1,
+                         v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_4_dev1,
+                         v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_4_dev1,
+                         v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_4_dev1,
+                         v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_4_dev1]
 
         aperture_dev = sivp.ImplantationWindow(
             0.069 * photonic_scaling[i], 0.069 * photonic_scaling[i], 11)
 
-        aperture_offsets = np.array([0.853, 0.735, 0.853, 0.735, 0.853, 0.735,
-                                    0.853, 0.735, 0.853, 0.735, 0.853, 0.735,
-                                    0.853, 0.735, 0.853])
+        aperture_offsets = np.array([0.111, 0.735, 0.735,
+                                     0.111, 0.735, 0.735,
+                                     0.111, 0.735, 0.735,
+                                     0.111, 0.735, 0.735,
+                                     0.111, 0.735, 0.735, ])
         aperture_offsets *= photonic_scaling[i]
 
         row_coords = np.linspace(
-            wf_width / 2 - margin_y - offset * i,
+             wf_width / 2 - margin_y - offset * i,
             -wf_width / 2 + margin_y + offset * (num_cols - i - 1),
             num_rows)
         for j, y in enumerate(row_coords):
@@ -229,16 +235,16 @@ def run_example():
     rarrow_top_ref = write_field.add_ref(rarrow)
     rarrow_top_ref.move([200, 235])
     spot_top_ref = write_field.add_ref(dot)
-    spot_top_ref.move([206.331-dot_size/2,234.978-dot_size/2])
+    spot_top_ref.move([206.331 - dot_size/2, 234.978 - dot_size/2])
     larrow = sivp.RenderedText(larrow_params)
     larrow_bot_ref = write_field.add_ref(larrow)
     larrow_bot_ref.move([-200, -235])
     spot_bot_ref = write_field.add_ref(dot)
-    spot_bot_ref.move([-206.306-dot_size/2,-235.022-dot_size/2])
+    spot_bot_ref.move([-206.306 - dot_size/2, -235.022 - dot_size/2])
 
-    write_field.move([10000,10000])
+    write_field.move([10000, 10000])
 
-    write_field.write_gds('Ovrcpld_v1p5_apertures.gds',precision=1e-10)
+    write_field.write_gds('Ovrcpld_v1p5_apertures.gds', precision=1e-10)
 
 
 if __name__ == "__main__":
@@ -246,11 +252,7 @@ if __name__ == "__main__":
 
 
 def test_run_example():
-    """Pytest launcher for example test.
-
-    This pytest will run the example and will fail if example
-    code is throwing an error.
-
-    TODO: Extend these tests.
+    """Pytest launcher for example test. This pytest will run the example and
+    will fail if example code is throwing an error.
     """
     run_example()
