@@ -8,7 +8,7 @@ import sividl.sividl_devices as sivp
 import phidl.geometry as pg
 
 # ==============================================================================
-# Adapted from example.py for production design of OvercoupledAirhole v0p4p1
+# Adapted from example.py for production design of OvercoupledAirhole v0p4p2
 # ==============================================================================
 # This code will generate a writefield and an array of labelled devices.
 # Devices are two slits of varying width separated by varying distance.
@@ -26,6 +26,13 @@ def run_example():
     nominal_resonance = 0.7377  # Simulated wavelength of cavity
     target_resonance = 0.737    # Target wavelength of cavity
     resonance_scaling = target_resonance / nominal_resonance
+
+    aperture_size = 0.069
+    aperture_offsets = np.array([0.111, 0.735, 0.735,
+                                 0.111, 0.735, 0.735,
+                                 0.111, 0.735, 0.735,
+                                 0.111, 0.735, 0.735,
+                                 0.111, 0.735, 0.735])
 
     pcc_params_7_5 = {
         'layer'                  : 2,
@@ -176,15 +183,11 @@ def run_example():
                          v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_4_dev1,
                          v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_4_dev1]
 
+        # TODO: why not fab_scaling?
         aperture_dev = sivp.ImplantationWindow(
-            0.069 * photonic_scaling[i], 0.069 * photonic_scaling[i], 11)
-
-        aperture_offsets = np.array([0.111, 0.735, 0.735,
-                                     0.111, 0.735, 0.735,
-                                     0.111, 0.735, 0.735,
-                                     0.111, 0.735, 0.735,
-                                     0.111, 0.735, 0.735, ])
-        aperture_offsets *= photonic_scaling[i]
+            aperture_size * photonic_scaling[i],
+            aperture_size * photonic_scaling[i], layer=11)
+        aperture_offsets_scaled = aperture_offsets * photonic_scaling[i]
 
         row_coords = np.linspace(
              wf_width / 2 - margin_y - offset * i,
@@ -198,7 +201,7 @@ def run_example():
             dev_ref.move([x, y])
 
             ap_ref = write_field.add_ref(aperture_dev)
-            ap_ref.move([x + aperture_offsets[j], y])
+            ap_ref.move([x + aperture_offsets_scaled[j], y])
 
     # Add Arrow pointing to top right alignment marker
     rarrow_params = {
