@@ -117,32 +117,15 @@ def run_example():
         'width'               : waveguide_width_hsq
     }
 
-    double_taper_w_support_params = {
-        'cavity_length'         : 11.0,
-        'layer_wg'              : 1,
-        'name'                  : "DT_wSupport",
-        'tapered_coupler_length': 17,
-        'tapered_support_length': 10,
-        'tapered_coupler_minWidth': 0.11,
-        'tapered_coupler_support_beam_length' : 6.0,
-        'tapered_coupler_support_beam_width'  : 0.33,
-        'tapered_coupler_support_roof_height' : 1.5,
-        'tapered_coupler_support_house_width' : 1.1,
-        'tapered_coupler_support_house_length': 1.5,
-        'tapered_support_width' : 1.4 * waveguide_width_hsq,
-        'waveguide_spacer_length': 6,
-        'width'               : waveguide_width_hsq
-    }
-
     num_cols = 3
     num_rows = 15
     wf_width = writefield_parameters['bounding_box_size']
     device_length = (
-        2 * double_taper_w_support_params['tapered_coupler_length']
-        + 2 * double_taper_w_support_params['tapered_coupler_support_beam_length']
-        + 4 * double_taper_w_support_params['tapered_support_length']
-        + 4 * double_taper_w_support_params['waveguide_spacer_length']
-        + double_taper_w_support_params['cavity_length'])
+        2 * double_taper_w_support_thermal_params['tapered_coupler_length']
+        + 2 * double_taper_w_support_thermal_params['tapered_coupler_support_beam_length']
+        + 4 * double_taper_w_support_thermal_params['tapered_support_length']
+        + 4 * double_taper_w_support_thermal_params['waveguide_spacer_length']
+        + double_taper_w_support_thermal_params['cavity_length'])
 
     print(device_length)
 
