@@ -4,7 +4,7 @@ import sys
 
 import numpy as np
 sys.path.append(os.path.abspath(os.path.join('.')))
-import sividl.sividl_devices as sivp  # noqa: E402
+import sividl.sividl_devices as sivp
 import phidl.geometry as pg
 
 # ==============================================================================
@@ -99,19 +99,6 @@ def run_example():
         'resonance_wavelength': 0.737
     }
 
-
-    double_taper_params = {
-        'cavity_length'         : 11.0,
-        'layer_wg'              : 1,
-        'name'                  : "DT",
-        'tapered_coupler_length': 16,
-        'tapered_support_length': 10,
-        'tapered_coupler_minWidth': 0.11,
-        'tapered_support_width' : 1.4 * waveguide_width_hsq,
-        'waveguide_spacer_length': 6,
-        'width'               : waveguide_width_hsq
-    }
-
     double_taper_w_support_thermal_params = {
         'cavity_length'         : 11.0,
         'layer_wg'              : 1,
@@ -172,8 +159,8 @@ def run_example():
         num_cols)
     for i, x in enumerate(col_coords):
         text_params = {
-            'name'     : 'label_{:1.5}'.format(photonic_scaling[i]),
-            'text'     : '{:1.5}'.format(photonic_scaling[i]),
+            'name'     : f'label_{photonic_scaling[i]:1.5}',
+            'text'     : f'{photonic_scaling[i]:1.5}',
             'style'    : 'normal',
             'fontsize' : 5,
             'layer'    : 5
@@ -185,13 +172,9 @@ def run_example():
         label_bot_ref = write_field.add_ref(text_label)
         label_bot_ref.move([x, -wf_width / 2 + margin_text / 2])
 
-        v0p4p2_7_3_dev0 = sivp.OvercoupledAirholeDevicev0p4p2(
-            pcc_params_7_3, double_taper_params, fab_scaling[i])
         v0p4p2_7_3_dev1 = sivp.OvercoupledAirholeDeviceWSupportv0p4p2(
             pcc_params_7_3, double_taper_w_support_thermal_params,
             fab_scaling[i])
-        v0p4p2_7_4_dev0 = sivp.OvercoupledAirholeDevicev0p4p2(
-            pcc_params_7_4, double_taper_params, fab_scaling[i])
         v0p4p2_7_4_dev1 = sivp.OvercoupledAirholeDeviceWSupportv0p4p2(
             pcc_params_7_4, double_taper_w_support_thermal_params,
             fab_scaling[i])
@@ -204,8 +187,6 @@ def run_example():
 
         aperture_dev = sivp.ImplantationWindow(
             0.069 * photonic_scaling[i], 0.069 * photonic_scaling[i], 11)
-        # implant_window_single_dev = sivp.ImplantationWindow(
-        #     0.075 * photonic_scaling[i], 0.075 * photonic_scaling[i], 11)
 
         aperture_offsets = np.array([0.853, 0.735, 0.853, 0.735, 0.853, 0.735,
                                     0.853, 0.735, 0.853, 0.735, 0.853, 0.735,
@@ -222,12 +203,6 @@ def run_example():
 
             ap_ref = write_field.add_ref(aperture_dev)
             ap_ref.move([x + aperture_offsets[j], y])
-            # if(j == 3 or j == 7):
-            #     aperture_ref = write_field.add_ref(implant_window_single_dev)
-            #     aperture_ref.move([x + 0.624 * photonic_scaling[i], y])
-            # else:
-            #     aperture_ref = write_field.add_ref(implant_window_dev)
-            #     aperture_ref.move([x + 0.736 * photonic_scaling[i], y])
 
     # Add Arrow pointing to top right alignment marker
     rarrow_params = {
