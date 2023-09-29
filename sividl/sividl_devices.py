@@ -1751,7 +1751,7 @@ class DoubleTaperedDeviceWithCouplerSupports(SividdleDevice):
 class AirholePCC_PeriodOnly(SividdleDevice):
     """Airholes for PCC which only modulate period.
     These are similar to V0p4p2 Devices, but include the right most
-    airhole of the wvg-mirr region which was dropped for some reason 
+    airhole of the wvg-mirr region which was dropped for some reason
     in previous designs.
 
     Parameters
@@ -2181,7 +2181,7 @@ class AirholeDevice(SividdleDevice):
         else:
             device_waveguide = DoubleTaperedDevice(self.dt_params)
 
-        
+
 
         self << device_holes
         self << device_waveguide
@@ -2225,7 +2225,7 @@ class OvercoupledAirholeDeviceWSupportv0p4p2(SividdleDevice):
         self.pcc_params = pcc_params.copy()
         self.dt_params = dt_params.copy()
         self.scaling = scaling
-        print("scaling = {},hxL = {}".format(scaling, self.pcc_params['hxL']))
+        print(f"scaling = {scaling}, hxL = {self.pcc_params['hxL']}")
         self.pcc_params['aL'] *= self.scaling
         self.pcc_params['aR'] *= self.scaling
         self.pcc_params['hxL'] *= self.scaling

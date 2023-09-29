@@ -1,11 +1,10 @@
-# Bring your packages onto the path
 import os
 import sys
 
 import numpy as np
 sys.path.append(os.path.abspath(os.path.join('.')))
-import sividl.sividl_devices as sivp
 import phidl.geometry as pg
+import sividl.sividl.sividl_devices as sivp
 
 # ==============================================================================
 # Adapted from example.py for production design of OvercoupledAirhole v0p4p2
@@ -16,33 +15,31 @@ import phidl.geometry as pg
 # Note that all dimensions are in micrometers.
 # ==============================================================================
 
-
 def run_example():
-    waveguide_width = 0.482
+    waveguide_width = 0.48015718
     hsq_scaling_factor = 1.126
     waveguide_width_hsq = hsq_scaling_factor * waveguide_width
 
     # Scale the cavity design to hit target wavelegnth
-    nominal_resonance = 0.7377  # Simulated wavelength of cavity
-    target_resonance = 0.737    # Target wavelength of cavity
+    nominal_resonance = 737.69  # Simulated wavelength of cavity
+    target_resonance = 737.134    # Target wavelength of cavity
     resonance_scaling = target_resonance / nominal_resonance
 
     aperture_size = 0.069
-    aperture_offsets = np.array([0.111, 0.735, 0.735,
-                                 0.111, 0.735, 0.735,
-                                 0.111, 0.735, 0.735,
-                                 0.111, 0.735, 0.735,
-                                 0.111, 0.735, 0.735])
+    aperture_offsets = np.array([0.7252, 0.6004, 0.7252, 0.6004,
+                                 0.7252, 0.6004, 0.7252, 0.6004,
+                                 0.7252, 0.6004, 0.7252, 0.6004,
+                                 0.7252, 0.6004, 0.7252])
 
     pcc_params_7_5 = {
         'layer'                  : 2,
-        'aL'                     : 0.2717,
-        'aR'                     : 0.2502,
-        'hxL'                    : 0.1135849,
-        'hyL'                    : 0.1605274,
-        'hxR'                    : 0.1135849,
-        'hyR'                    : 0.1605274,
-        'maxDef'                 : 0.1392,
+        'aL'                     : 0.27184455,
+        'aR'                     : 0.24995467,
+        'hxL'                    : 0.10824489,
+        'hyL'                    : 0.16361557,
+        'hxR'                    : 0.10824489,
+        'hyR'                    : 0.16361557,
+        'maxDef'                 : 0.14187774,
         'nholesLMirror'          : 7,
         'nholesRMirror'          : 5,
         'nholes_wvg-mirr_trans_L': 5,
@@ -50,18 +47,19 @@ def run_example():
         'nholes_defect'          : 5,
         'min_hole_dim'           : 0.05,
         'effective_index'        : 1.6,
-        'resonance_wavelength'   : 0.737
+        'resonance_wavelength'   : 0.737134 # used to calculate standing wave "lattice constant"
+        # that the mirror-to-waveguide lattice constant transitions to.
     }
 
     pcc_params_7_4 = {
         'layer'                  : 2,
-        'aL'                     : 0.2717,
-        'aR'                     : 0.2502,
-        'hxL'                    : 0.1135849,
-        'hyL'                    : 0.1605274,
-        'hxR'                    : 0.1135849,
-        'hyR'                    : 0.1605274,
-        'maxDef'                 : 0.1392,
+        'aL'                     : 0.27184455,
+        'aR'                     : 0.24995467,
+        'hxL'                    : 0.10824489,
+        'hyL'                    : 0.16361557,
+        'hxR'                    : 0.10824489,
+        'hyR'                    : 0.16361557,
+        'maxDef'                 : 0.14187774,
         'nholesLMirror'          : 7,
         'nholesRMirror'          : 4,
         'nholes_wvg-mirr_trans_L': 5,
@@ -69,7 +67,8 @@ def run_example():
         'nholes_defect'          : 5,
         'min_hole_dim'           : 0.05,
         'effective_index'        : 1.6,
-        'resonance_wavelength'   : 0.737
+        'resonance_wavelength'   : 0.737134 # used to calculate standing wave "lattice constant"
+        # that the mirror-to-waveguide lattice constant transitions to.
     }
 
     double_taper_w_support_thermal_params = {
@@ -177,11 +176,10 @@ def run_example():
             pcc_params_7_4, double_taper_w_support_thermal_params,
             fab_scaling[i])
 
-        column_layout = [v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_4_dev1,
-                         v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_4_dev1,
-                         v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_4_dev1,
-                         v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_4_dev1,
-                         v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_4_dev1]
+        column_layout = [v0p4p2_7_4_dev1, v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_5_dev1,
+                         v0p4p2_7_4_dev1, v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_5_dev1,
+                         v0p4p2_7_4_dev1, v0p4p2_7_5_dev1, v0p4p2_7_4_dev1, v0p4p2_7_5_dev1,
+                         v0p4p2_7_4_dev1, v0p4p2_7_5_dev1, v0p4p2_7_4_dev1]
 
         # TODO: why not fab_scaling?
         aperture_dev = sivp.ImplantationWindow(
