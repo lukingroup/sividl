@@ -15,6 +15,8 @@ import sividl.sividl.sividl_devices as sivp
 # Note that all dimensions are in micrometers.
 # ==============================================================================
 
+FILENAME = "20231023_Ovrcpld_v1p6p2"
+
 def run_example():
     waveguide_width = 0.48015718
     hsq_scaling_factor = 1.126
@@ -235,7 +237,7 @@ def run_example():
 
     write_field.move([10000, 10000])
 
-    write_field.write_gds('Ovrcpld_v1p6_apertures.gds', precision=1e-10)
+    write_field.write_gds(f'{FILENAME}.gds', precision=1e-10)
 
 if __name__ == "__main__":
     run_example()
