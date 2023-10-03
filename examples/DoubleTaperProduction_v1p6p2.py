@@ -27,11 +27,15 @@ def run_example():
     target_resonance = 737.134    # Target wavelength of cavity
     resonance_scaling = target_resonance / nominal_resonance
 
-    aperture_size = 0.069
+    aperture_size = 0.065
     aperture_offsets = np.array([0.7252, 0.6004, 0.7252, 0.6004,
                                  0.7252, 0.6004, 0.7252, 0.6004,
                                  0.7252, 0.6004, 0.7252, 0.6004,
                                  0.7252, 0.6004, 0.7252])
+    aperture_ncols = 3
+    aperture_nrows = 3
+    aperture_aX    = 0.500
+    aperture_aY    = 0.500
 
     pcc_params_7_5 = {
         'layer'                  : 2,
@@ -188,6 +192,8 @@ def run_example():
             aperture_size * photonic_scaling[i],
             aperture_size * photonic_scaling[i], layer=11)
         aperture_offsets_scaled = aperture_offsets * photonic_scaling[i]
+        aperture_aX_scaled = aperture_aX * photonic_scaling[i]
+        aperture_aY_scaled = aperture_aY * photonic_scaling[i]
 
         row_coords = np.linspace(
              wf_width / 2 - margin_y - offset * i,
@@ -200,8 +206,11 @@ def run_example():
             dev_ref = write_field.add_ref(column_layout[j])
             dev_ref.move([x, y])
 
-            ap_ref = write_field.add_ref(aperture_dev)
-            ap_ref.move([x + aperture_offsets_scaled[j], y])
+            ap_ref = write_field.add_array(aperture_dev,
+                        columns=aperture_ncols, rows=aperture_nrows,
+                        spacing=[aperture_aX_scaled, aperture_aY_scaled])
+            ap_ref.move([x + aperture_offsets_scaled[j] - aperture_aX_scaled,
+                         y - aperture_aY_scaled])
 
     # Add Arrow pointing to top right alignment marker
     rarrow_params = {
