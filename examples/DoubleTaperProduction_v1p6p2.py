@@ -169,9 +169,9 @@ def run_example():
 
         text_label = sivp.RenderedText(text_params)
         label_top_ref = write_field.add_ref(text_label)
-        label_top_ref.move([x, wf_width / 2 - margin_text / 2])
+        label_top_ref.move([x, wf_width / 2 - margin_text / 2  - offset * i])
         label_bot_ref = write_field.add_ref(text_label)
-        label_bot_ref.move([x, -wf_width / 2 + margin_text / 2])
+        label_bot_ref.move([x, -wf_width / 2 + margin_text / 2 + offset * (num_cols - i - 1)])
 
         # Define the column of devices! They are defined here as they need to
         # have a differnt fab scaling per column.
@@ -229,15 +229,15 @@ def run_example():
         'layer'         : 4,
     }
 
-    # Add coarse alignment spots in apex of arrow
+    # Coarse alignment spots in apex of arrow
     dot_size = 0.01
-    dot = pg.rectangle(size=(dot_size, dot_size),layer=10)
+    dot = pg.rectangle(size=(dot_size, dot_size), layer=10)
 
     rarrow = sivp.RenderedText(rarrow_params)
     rarrow_top_ref = write_field.add_ref(rarrow)
     rarrow_top_ref.move([200, 235])
     spot_top_ref = write_field.add_ref(dot)
-    spot_top_ref.move([206.331 - dot_size/2, 234.978 - dot_size/2])
+
     larrow = sivp.RenderedText(larrow_params)
     larrow_bot_ref = write_field.add_ref(larrow)
     larrow_bot_ref.move([-200, -235])
