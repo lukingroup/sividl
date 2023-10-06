@@ -104,8 +104,8 @@ def run_example():
     print(device_length)
 
     # Setup writefield.
-    # Alignment mark parameters
-    alignment_mark_params = {
+    # Manual alignment marks (4 squares) parameters
+    manual_alignment_mark_params = {
         'layer'               : 1,
         'exposure_box'        : True,
         'exposure_box_dx'     : 8,
@@ -132,7 +132,7 @@ def run_example():
         'exposure_box_layer'    : 10,
         'add_text_label'        : True,
         'text_label_layer'      : 199,
-        'alignment_mark_params' : alignment_mark_params
+        'alignment_mark_params' : manual_alignment_mark_params
     }
 
     # Generate Writefield.
