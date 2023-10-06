@@ -244,6 +244,17 @@ def run_example():
     spot_bot_ref = write_field.add_ref(dot)
     spot_bot_ref.move([-206.306 - dot_size/2, -235.022 - dot_size/2])
 
+    # Alignment crosses at writefield corners
+    alignment_cross = pg.cross(length=12.0, width=2.0, layer=1)
+
+    cross_topleft_ref = write_field.add_ref(alignment_cross)
+    cross_topleft_ref.move([-210, 235])
+    cross_topright_ref = write_field.add_ref(alignment_cross)
+    cross_topright_ref.move([210, 235])
+    cross_botleft_ref = write_field.add_ref(alignment_cross)
+    cross_botleft_ref.move([-210, -235])
+    cross_botright_ref = write_field.add_ref(alignment_cross)
+    cross_botright_ref.move([210, -235])
     write_field.move([10000, 10000])
 
     write_field.write_gds(f'{FILENAME}.gds', precision=1e-10)
