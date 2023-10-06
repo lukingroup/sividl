@@ -212,17 +212,22 @@ def run_example():
             ap_ref.move([x + aperture_offsets_scaled[j] - aperture_aX_scaled,
                          y - aperture_aY_scaled])
 
-    # Alignment crosses at writefield corners
+    # Automatic alignment crosses at writefield corners
     alignment_cross = pg.cross(length=12.0, width=2.0, layer=1)
+    # Exposure circle around the alignment crosses
+    alignment_cross_circle = pg.circle(radius=12.0, angle_resolution = 1.0, layer=10)
+    alignment_cross_pos_x, alignment_cross_pos_y = (200, 235)
 
-    cross_topleft_ref = write_field.add_ref(alignment_cross)
-    cross_topleft_ref.move([-210, 235])
-    cross_topright_ref = write_field.add_ref(alignment_cross)
-    cross_topright_ref.move([210, 235])
-    cross_botleft_ref = write_field.add_ref(alignment_cross)
-    cross_botleft_ref.move([-210, -235])
-    cross_botright_ref = write_field.add_ref(alignment_cross)
-    cross_botright_ref.move([210, -235])
+    for cross_x_sign in (-1, 1):
+        for cross_y_sign in (-1, 1):
+            cross_ref = write_field.add_ref(alignment_cross)
+            cross_ref.move([cross_x_sign * alignment_cross_pos_x,
+                            cross_y_sign * alignment_cross_pos_y])
+
+            circle_ref = write_field.add_ref(alignment_cross_circle)
+            circle_ref.move([cross_x_sign * alignment_cross_pos_x,
+                             cross_y_sign * alignment_cross_pos_y])
+
     write_field.move([10000, 10000])
 
     write_field.write_gds(f'{FILENAME}.gds', precision=1e-10)
