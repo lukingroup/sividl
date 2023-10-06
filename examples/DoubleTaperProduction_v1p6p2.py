@@ -130,7 +130,7 @@ def run_example():
         'exposure_box'          : True,
         'exposure_box_dx'       : 8,
         'exposure_box_layer'    : 10,
-        'add_text_label'        : True,
+        'add_text_label'        : False,
         'text_label_layer'      : 199,
         'alignment_mark_params' : manual_alignment_mark_params
     }
@@ -228,6 +228,16 @@ def run_example():
             circle_ref.move([cross_x_sign * alignment_cross_pos_x,
                              cross_y_sign * alignment_cross_pos_y])
 
+    # Coarse alignment triangles
+    alignment_triangle = sivp.SividdleDevice("alignment_triangle")
+    points = [(0, 0), (28, 12), (28, -12)]
+    alignment_triangle.add_polygon(points, layer=4)
+    triangle_botleft = write_field.add_ref(alignment_triangle)
+    triangle_botleft.move([-170, -235])
+    triangle_botright_ref = write_field.add_ref(alignment_triangle)
+    triangle_botright_ref.move([-170, 235])
+
+    # Move writefield to be centered at 10mm, 10mm
     write_field.move([10000, 10000])
 
     write_field.write_gds(f'{FILENAME}.gds', precision=1e-10)
