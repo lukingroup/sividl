@@ -212,38 +212,6 @@ def run_example():
             ap_ref.move([x + aperture_offsets_scaled[j] - aperture_aX_scaled,
                          y - aperture_aY_scaled])
 
-    # Add Arrow pointing to top right alignment marker
-    rarrow_params = {
-        'name'          : 'arrow',
-        'text'          : '>',
-        'fontsize'      : 40,
-        'style'         : 'normal',
-        'layer'         : 4,
-    }
-
-    larrow_params = {
-        'name'          : 'arrow',
-        'text'          : '<',
-        'fontsize'      : 40,
-        'style'         : 'normal',
-        'layer'         : 4,
-    }
-
-    # Coarse alignment spots in apex of arrow
-    dot_size = 0.01
-    dot = pg.rectangle(size=(dot_size, dot_size), layer=10)
-
-    rarrow = sivp.RenderedText(rarrow_params)
-    rarrow_top_ref = write_field.add_ref(rarrow)
-    rarrow_top_ref.move([200, 235])
-    spot_top_ref = write_field.add_ref(dot)
-
-    larrow = sivp.RenderedText(larrow_params)
-    larrow_bot_ref = write_field.add_ref(larrow)
-    larrow_bot_ref.move([-200, -235])
-    spot_bot_ref = write_field.add_ref(dot)
-    spot_bot_ref.move([-206.306 - dot_size/2, -235.022 - dot_size/2])
-
     # Alignment crosses at writefield corners
     alignment_cross = pg.cross(length=12.0, width=2.0, layer=1)
 
