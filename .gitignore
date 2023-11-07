@@ -140,3 +140,6 @@ dmypy.json
 .pytest_cache
 
 /untracked_projects
+periodStruct.txt
+periodStruct2.txt
+posStruct.txt

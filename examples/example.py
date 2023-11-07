@@ -12,7 +12,7 @@ import sividl.sividl_devices as sivp  # noqa: E402
 # This code will generate a writefield and an array of labelled devices.
 # Devices are two slits of varying width separated by varying distance.
 #
-# Note that all dimensions are in micrometer.
+# Note that all dimensions are in micrometers.
 # ==============================================================================
 
 
@@ -169,8 +169,8 @@ if __name__ == "__main__":
 def test_run_example():
     """Pytest launcher for example test.
 
-    This pytest will run the example and throw will fail if example
-    code is thothrowing an error.
+    This pytest will run the example and will fail if example
+    code is throwing an error.
 
     TODO: Extend these tests.
     """
