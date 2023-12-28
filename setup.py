@@ -1,4 +1,5 @@
-from distutils.core import setup
+from distutils.core import setup 
+# from setuptools import setup, find_packages #EK suggests to change to setuptools in future versions 23/12/27
 
 setup(
   name = "sividl",
