@@ -27,7 +27,7 @@ import numpy as np
 from phidl import CrossSection, Device
 import phidl.geometry as pg
 import phidl.path as pp
-from sividl.sividl_utils import image_to_binary_bitmap, render_text
+from .sividl_utils import image_to_binary_bitmap, render_text
 
 
 class SividdleDevice(Device):
